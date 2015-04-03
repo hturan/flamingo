@@ -1,5 +1,5 @@
 # flamingo
-A Node/Three.js/DualShock-powered flamingo simulator
+A Node/Three.js/DualShock-powered flamingo simulator, made by [@hturan](https://github.com/hturan) and [@supersational](https://github.com/supersational).
 
 ![](http://i.imgur.com/Fg8MV42.png)
 
