@@ -4,54 +4,66 @@ var WebSocketServer = require('ws').Server
 var clients = [];
 
 wss.on('connection', function(ws) {
-    clients.push(ws);
+  clients.push(ws);
 
-    ws.on('close', function (ws) {
-      clients.splice(clients.indexOf(ws), 1);
-    });
+  ws.on('close', function (ws) {
+    clients.splice(clients.indexOf(ws), 1);
+  });
+
+  ws.on('message', function incoming(data) {
+    var rotation = JSON.parse(data);
+
+    sendMessage('rightLeft.motion', {value: rotation.y});
+    sendMessage('upDown.motion', {value: rotation.x});
+  });
 });
 
-var dualShock = require('dualshock-controller');
+// var dualShock = require('dualshock-controller');
 
-var controller = dualShock({
-  config : "dualShock3",
-  accelerometerSmoothing : true,
-  analogStickSmoothing : true
-});
+// var controller = dualShock({
+//   config : "dualShock3",
+//   accelerometerSmoothing : true,
+//   analogStickSmoothing : true
+// });
 
-controller.connect();
+// controller.connect();
 
-// Joysticks
-// =========
-controller.on('left:move', function(data) {
-  // if ((position.x > 130 || position.x < 120) || (position.y > 130 || position.y < 120)) {
-    sendMessage('left.move', data);
-  // };
-});
+// // Joysticks
+// // =========
+// controller.on('left:move', function(data) {
+//   // if ((position.x > 130 || position.x < 120) || (position.y > 130 || position.y < 120)) {
+//     sendMessage('left.move', data);
+//   // };
+// });
 
-// Motion
-// ======
-controller.on('rightLeft:motion', function(data) {
-  sendMessage('rightLeft.motion', data);
-});
+// // Motion
+// // ======
+// // roll
+// controller.on('rightLeft:motion', function(data) {
+//   // console.log('rightLeft', data);
+//   sendMessage('rightLeft.motion', data);
+// });
 
-controller.on('upDown:motion', function(data) {
-  sendMessage('upDown.motion', data);
-});
+// controller.on('upDown:motion', function(data) {
+//   // console.log('upDown', data);
+//   sendMessage('upDown.motion', data);
+// });
 
-controller.on('forwardBackward:motion', function(data) {
-  sendMessage('forwardBackward.motion', data);
-});
+// // pitch
+// controller.on('forwardBackward:motion', function(data) {
+//   // console.log('forwardBackward', data);
+//   // sendMessage('forwardBackward.motion', data);
+// });
 
-// Buttons
-// =======
-controller.on('x:press', function() {
-  sendMessage('x.press');
-});
+// // Buttons
+// // =======
+// controller.on('x:press', function() {
+//   sendMessage('x.press');
+// });
 
-controller.on('x:release', function() {
-  sendMessage('x.release');
-});
+// controller.on('x:release', function() {
+//   sendMessage('x.release');
+// });
 
 function sendMessage (event, data) {
   var response = {
@@ -59,7 +71,7 @@ function sendMessage (event, data) {
     data: data
   };
 
-  for (var i = 0; i < clients.length; i += 1) {
-    clients[i].send(JSON.stringify(response));
-  }
+  // for (var i = 0; i < clients.length; i += 1) {
+    clients[0].send(JSON.stringify(response));
+  // }
 }
