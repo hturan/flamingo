@@ -33,7 +33,7 @@ var server = http.createServer(function(req, res){
 })
  
 // Listen 
-server.listen(process.env.PORT | 8000);
+server.listen(process.env.PORT || 8000);
 
 // var dualShock = require('dualshock-controller');
 
