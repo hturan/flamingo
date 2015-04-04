@@ -16,8 +16,7 @@
 </head>
 <body>
   <script type="text/javascript">
-    var host = location.origin.replace(/^http/, 'ws');
-    var ws = new WebSocket(host + ':3000', 'echo-origin');
+    var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), 'echo-origin');
 
     webSocketActive = false;
 
