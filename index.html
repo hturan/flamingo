@@ -297,7 +297,7 @@
 	</script>
 
 	<script type="text/javascript">
-		var ws = new WebSocket('ws://localhost:3000', 'echo-protocol');
+		var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), 'echo-origin');
 
 		var playerPosition = {x:0, y:0, z:0};
 		var playerRotation = {x:0, y:0, z:0};
