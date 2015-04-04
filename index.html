@@ -4,8 +4,6 @@
 	<title>flamingo</title>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
-	<script type="text/javascript" src="http://threejs.org/examples/js/Detector.js"></script>
-	<script type="text/javascript" src="http://threejs.org/examples/js/libs/stats.min.js"></script>
 
 	<style type="text/css">
 		html, body {
@@ -14,10 +12,21 @@
 			position: relative;
 			margin: 0;
 			padding: 0;
+			border: 0;
+		}
+
+		div#fps {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			font-family: Courier;
+			font-weight: bold;
+			color: rgba(0,0,0,0.2);
 		}
 	</style>
 </head>
 <body>
+	<div id="fps"></div>
 	<div id="container"></div>
 
 	<script type="x-shader/x-vertex" id="vertexShader">
@@ -54,9 +63,6 @@
 	</script>
 
 		<script>
-
-			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
 			var camera, scene, renderer, dirLight, hemiLight;
 			var morphs = [];
 			var stats;
@@ -201,16 +207,8 @@
 				renderer.shadowMapEnabled = true;
 				renderer.shadowMapCullFace = THREE.CullFaceBack;
 
-				// STATS
-
-				stats = new Stats();
-				container.appendChild( stats.domElement );
-
-				//
-
 				window.addEventListener( 'resize', onWindowResize, false );
 				document.addEventListener( 'keydown', onKeyDown, false );
-
 			}
 
 			function morphColorsToFaceColors( geometry ) {
@@ -273,8 +271,8 @@
 				// }
 
 				render();
-				stats.update();
-
+				
+				document.getElementById('fps').innerText = fps.getFPS();
 			}
 
 			function render() {
@@ -322,13 +320,30 @@
 				case 'motion':
 					var rotation = response.data.value;
 
-					playerRotation.x = rotation.x * (Math.PI / 180);
-					playerRotation.y = rotation.y * (Math.PI / 180);
-					playerRotation.z = rotation.z * (Math.PI / 180);
+					playerRotation.x = -THREE.Math.degToRad(rotation.x);
+					playerRotation.y = THREE.Math.degToRad(rotation.y);
+					playerRotation.z = -THREE.Math.degToRad(rotation.z);
 
 					break;
 			}
 		});
+
+		var fps = {
+			startTime : 0,
+			frameNumber : 0,
+			getFPS : function(){
+				this.frameNumber++;
+				var d = new Date().getTime(),
+					currentTime = ( d - this.startTime ) / 1000,
+					result = Math.floor( ( this.frameNumber / currentTime ) );
+
+				if( currentTime > 1 ){
+					this.startTime = new Date().getTime();
+					this.frameNumber = 0;
+				}
+				return result;
+			}	
+		};
 	</script>
 </body>
 </html>

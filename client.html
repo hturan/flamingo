@@ -18,17 +18,25 @@
   <script type="text/javascript">
     var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
 
-    webSocketActive = false;
+    var webSocketActive = false;
+    var deviceOrientation = {x: 0, y: 0, z: 0};
 
     ws.onopen = function () {
       ws.send(JSON.stringify({client_type: 'controller'}));
       webSocketActive = true;
     };
 
-    window.addEventListener('deviceorientation', function(eventData) {
+    // Update server position at 60fps
+    setInterval(function () {
       if (webSocketActive) {
-        ws.send(JSON.stringify({x: eventData.beta, y: eventData.alpha, z: eventData.gamma}));
+        ws.send(JSON.stringify(deviceOrientation));
       }
+    }, (1000/60));
+
+    window.addEventListener('deviceorientation', function(event) {
+      deviceOrientation.x = event.beta;
+      deviceOrientation.y = event.alpha;
+      deviceOrientation.z = event.gamma;
     });
   </script>
 </body>
