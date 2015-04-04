@@ -28,10 +28,14 @@ wss.on('connection', function(ws) {
   });
 
   ws.on('message', function incoming(data) {
-    var rotation = JSON.parse(data);
+    data = JSON.parse(data);
 
-    sendMessage('rightLeft.motion', {value: rotation.y});
-    sendMessage('upDown.motion', {value: rotation.x});
+    if (data.client_type) {
+      console.log('set ', data.client_type);
+      clients[clients.indexOf(ws)].client_type = data.client_type;
+    } else {
+      sendMessage('motion', {value: data});
+    }
   });
 });
 
@@ -88,7 +92,9 @@ function sendMessage (event, data) {
     data: data
   };
 
-  // for (var i = 0; i < clients.length; i += 1) {
-    clients[0].send(JSON.stringify(response));
-  // }
+  for (var i = 0; i < clients.length; i += 1) {
+    if (clients[i].client_type === 'renderer') {
+      clients[i].send(JSON.stringify(response));
+    }
+  }
 }

@@ -16,17 +16,18 @@
 </head>
 <body>
   <script type="text/javascript">
-    var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), 'echo-origin');
+    var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
 
     webSocketActive = false;
 
     ws.onopen = function () {
+      ws.send(JSON.stringify({client_type: 'controller'}));
       webSocketActive = true;
     };
 
     window.addEventListener('deviceorientation', function(eventData) {
       if (webSocketActive) {
-        ws.send(JSON.stringify({x: eventData.beta, y: eventData.gamma}));
+        ws.send(JSON.stringify({x: eventData.beta, y: eventData.alpha, z: eventData.gamma}));
       }
     });
   </script>

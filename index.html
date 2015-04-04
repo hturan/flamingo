@@ -265,7 +265,7 @@
 
 				meshAnim.rotation.x = playerRotation.x;
 				meshAnim.rotation.y = playerRotation.y;
-				// meshAnim.rotation.z = playerRotation.z;
+				meshAnim.rotation.z = playerRotation.z;
 
 				// Keep that flamingo off the floor
 				// if (meshAnim.position.y<1) {
@@ -297,7 +297,12 @@
 	</script>
 
 	<script type="text/javascript">
-		var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), 'echo-origin');
+		var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
+
+		ws.onopen = function () {
+      ws.send(JSON.stringify({client_type: 'renderer'}));
+      webSocketActive = true;
+    };
 
 		var playerPosition = {x:0, y:0, z:0};
 		var playerRotation = {x:0, y:0, z:0};
@@ -314,14 +319,13 @@
 					playerPosition.x = (response.data.x - 128) / 100;
 					playerPosition.y = (response.data.y - 128) / 100;
 					break;
-				case 'rightLeft.motion':
-					playerRotation.y = response.data.value * (Math.PI / 180);
-					break;
-				case 'upDown.motion':
-					playerRotation.x = response.data.value * (Math.PI / 180);
-					break;
-				case 'forwardBackward.motion':
-					// playerRotation.z = response.data.value * (Math.PI / 180);
+				case 'motion':
+					var rotation = response.data.value;
+
+					playerRotation.x = rotation.x * (Math.PI / 180);
+					playerRotation.y = rotation.y * (Math.PI / 180);
+					playerRotation.z = rotation.z * (Math.PI / 180);
+
 					break;
 			}
 		});
