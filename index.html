@@ -258,8 +258,11 @@
 
 				requestAnimationFrame( animate );
 
-				meshAnim.position.x += playerPosition.x;
-				meshAnim.position.y += playerPosition.y;
+				// meshAnim.position.x += playerPosition.x;
+        // meshAnim.position.y += playerPosition.y;
+				// meshAnim.position.z += playerPosition.z;
+
+        meshAnim.translateZ(0.5);
 
 				meshAnim.rotation.x = playerRotation.x;
 				meshAnim.rotation.y = playerRotation.y;
@@ -287,6 +290,8 @@
 					morph.updateAnimation( 1000 * delta );
 
 				}
+
+
 
 				renderer.render( scene, camera );
 
