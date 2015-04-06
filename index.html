@@ -68,7 +68,7 @@
 			var stats;
 
 			var clock = new THREE.Clock();
-
+			var coolDown = 0;
 			init();
 			animate();
 
@@ -167,8 +167,13 @@
 				// MODEL
 
 				var loader = new THREE.JSONLoader();
-
-				loader.load( "models/animated/flamingo.js", function( geometry ) {
+				var models = {
+					"flamingo":"models/animated/flamingo.js",
+					"parrot":"models/animated/parrot.js",
+					"stork":"models/animated/stork.js",
+					"horse":"models/animated/horse.js"};
+					
+					loader.load( models["parrot"], function( geometry ) {
 
 					morphColorsToFaceColors( geometry );
 					geometry.computeMorphNormals();
@@ -209,6 +214,7 @@
 
 				window.addEventListener( 'resize', onWindowResize, false );
 				document.addEventListener( 'keydown', onKeyDown, false );
+				document.addEventListener( 'keyup', onKeyUp, false );
 			}
 
 			function morphColorsToFaceColors( geometry ) {
@@ -249,35 +255,58 @@
 
 					dirLight.visible = !dirLight.visible;
 					break;
-
+					
+					case 65: /*a*/
+					console.log('a')
+					break;
+					
+					// space
+					case 32:
+					playerKeys["s"] = 1;
+					console.log("bullet");
+					break;
+					// arrow keys
+					case 37:
+					playerKeys["l"] = 1;
+					break;
+					case 39:
+					playerKeys["r"] = 1;
+					break;
+					case 38:
+					playerKeys["d"] = 1;
+					break;
+					case 40:
+					playerKeys["u"] = 1;
+					break;
 				}
 
 			}
+			function onKeyUp ( event ) {
 
+				switch ( event.keyCode ) {
+					case 37:
+					playerKeys["l"] = 0;
+					break;
+					case 39:
+					playerKeys["r"] = 0;
+					break;
+					case 38:
+					playerKeys["d"] = 0;
+					break;
+					case 40:
+					playerKeys["u"] = 0;
+					break;
+				}
+			}
 			function animate() {
 
 				requestAnimationFrame( animate );
-
-				// meshAnim.position.x += playerPosition.x;
-        // meshAnim.position.y += playerPosition.y;
-				// meshAnim.position.z += playerPosition.z;
-
-        meshAnim.translateZ(0.5);
-
-				meshAnim.rotation.x = playerRotation.x;
-				meshAnim.rotation.y = playerRotation.y;
-				meshAnim.rotation.z = playerRotation.z;
-
-				// Keep that flamingo off the floor
-				// if (meshAnim.position.y<1) {
-				// 	meshAnim.position.y = 5;
-				// }
 
 				render();
 				
 				document.getElementById('fps').innerText = fps.getFPS();
 			}
-
+			
 			function render() {
 
 				var delta = clock.getDelta();
@@ -290,12 +319,53 @@
 					morph.updateAnimation( 1000 * delta );
 
 				}
+				// harleys merge
+				meshAnim.translateZ(0.5);
 
+				meshAnim.rotation.x = playerRotation.x;
+				meshAnim.rotation.y = playerRotation.y;
+				meshAnim.rotation.z = playerRotation.z;
+				// player velocity (now using clock delta)
+				
+				//set from server
+				//window.meshAnim.position.x += playerPosition.x * 1000 * delta;
+				//window.meshAnim.position.y += playerPosition.y * 1000 * delta;
 
+				//window.meshAnim.rotation.x = playerRotation.x * 1000 * delta;
+				//window.meshAnim.rotation.y = playerRotation.y * 1000 * delta;
+
+				// keyboard velocities
+				window.meshAnim.position.x += (playerKeys["r"] - playerKeys["l"]) * 100 * delta;
+				window.meshAnim.position.y += (playerKeys["u"] - playerKeys["d"]) * 100 * delta;
+				
+				//bullet
+				coolDown += delta ;
+				if (playerKeys["s"]) {
+					console.log("shot" + coolDown);
+					if (coolDown > 0.25) {
+						console.log("reset cooldown");
+						shootBullet(window.meshAnim.position, window.meshAnim.position);
+						coolDown = 0;
+						playerKeys["s"] = 0;
+					}
+				}
 
 				renderer.render( scene, camera );
 
 			}
+			var bullets = new Array();
+			var bulletGeometry = new THREE.SphereGeometry( 20, 32, 32 );
+			var bulletMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} );
+			function shootBullet( pos, vel) {
+				console.log("shot bullet from " + pos.x + "," + pos.y + "," +  pos.z);
+				var bulletMesh = new THREE.Mesh( bulletGeometry, bulletMaterial );
+				bulletMesh.castShadow = true;
+				bulletMesh.receiveShadow = true;
+				bulletMesh.position = pos;
+				bullets.push(bulletMesh);
+				scene.add(bulletMesh);
+			}
+
 
 	</script>
 
@@ -309,6 +379,7 @@
 
 		var playerPosition = {x:0, y:0, z:0};
 		var playerRotation = {x:0, y:0, z:0};
+		var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
 		ws.addEventListener("message", function(response) {
 			var response = JSON.parse(response.data);
