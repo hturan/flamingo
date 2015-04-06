@@ -4,8 +4,6 @@
 	<title>flamingo</title>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
-	<script type="text/javascript" src="http://threejs.org/examples/js/Detector.js"></script>
-	<script type="text/javascript" src="http://threejs.org/examples/js/libs/stats.min.js"></script>
 
 	<style type="text/css">
 		html, body {
@@ -14,10 +12,21 @@
 			position: relative;
 			margin: 0;
 			padding: 0;
+			border: 0;
+		}
+
+		div#fps {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			font-family: Courier;
+			font-weight: bold;
+			color: rgba(0,0,0,0.2);
 		}
 	</style>
 </head>
 <body>
+	<div id="fps"></div>
 	<div id="container"></div>
 
 	<script type="x-shader/x-vertex" id="vertexShader">
@@ -54,9 +63,6 @@
 	</script>
 
 		<script>
-
-			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
 			var camera, scene, renderer, dirLight, hemiLight;
 			var morphs = [];
 			var stats;
@@ -206,17 +212,9 @@
 				renderer.shadowMapEnabled = true;
 				renderer.shadowMapCullFace = THREE.CullFaceBack;
 
-				// STATS
-
-				stats = new Stats();
-				container.appendChild( stats.domElement );
-
-				//
-
 				window.addEventListener( 'resize', onWindowResize, false );
 				document.addEventListener( 'keydown', onKeyDown, false );
 				document.addEventListener( 'keyup', onKeyUp, false );
-
 			}
 
 			function morphColorsToFaceColors( geometry ) {
@@ -304,15 +302,9 @@
 
 				requestAnimationFrame( animate );
 
-
-				// Keep that flamingo off the floor
-				// if (meshAnim.position.y<1) {
-				// 	meshAnim.position.y = 5;
-				// }
-
 				render();
-				stats.update();
-
+				
+				document.getElementById('fps').innerText = fps.getFPS();
 			}
 			
 			function render() {
@@ -327,19 +319,26 @@
 					morph.updateAnimation( 1000 * delta );
 
 				}
-				
+				// harleys merge
+				meshAnim.translateZ(0.5);
+
+				meshAnim.rotation.x = playerRotation.x;
+				meshAnim.rotation.y = playerRotation.y;
+				meshAnim.rotation.z = playerRotation.z;
 				// player velocity (now using clock delta)
+				
+				//set from server
+				//window.meshAnim.position.x += playerPosition.x * 1000 * delta;
+				//window.meshAnim.position.y += playerPosition.y * 1000 * delta;
 
-				window.meshAnim.position.x += playerPosition.x * 1000 * delta;
-				window.meshAnim.position.y += playerPosition.y * 1000 * delta;
-
-				window.meshAnim.rotation.x = playerRotation.x * 1000 * delta;
-				window.meshAnim.rotation.y = playerRotation.y * 1000 * delta;
+				//window.meshAnim.rotation.x = playerRotation.x * 1000 * delta;
+				//window.meshAnim.rotation.y = playerRotation.y * 1000 * delta;
 
 				// keyboard velocities
 				window.meshAnim.position.x += (playerKeys["r"] - playerKeys["l"]) * 100 * delta;
 				window.meshAnim.position.y += (playerKeys["u"] - playerKeys["d"]) * 100 * delta;
 				
+				//bullet
 				coolDown += delta ;
 				if (playerKeys["s"]) {
 					console.log("shot" + coolDown);
@@ -371,7 +370,12 @@
 	</script>
 
 	<script type="text/javascript">
-		var ws = new WebSocket('ws://localhost:3000', 'echo-protocol');
+		var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
+
+		ws.onopen = function () {
+      ws.send(JSON.stringify({client_type: 'renderer'}));
+      webSocketActive = true;
+    };
 
 		var playerPosition = {x:0, y:0, z:0};
 		var playerRotation = {x:0, y:0, z:0};
@@ -389,17 +393,33 @@
 					playerPosition.x = (response.data.x - 128) / 100;
 					playerPosition.y = (response.data.y - 128) / 100;
 					break;
-				case 'rightLeft.motion':
-					playerRotation.y = response.data.value * (Math.PI / 180);
-					break;
-				case 'upDown.motion':
-					playerRotation.x = response.data.value * (Math.PI / 180);
-					break;
-				case 'forwardBackward.motion':
-					// playerRotation.z = response.data.value * (Math.PI / 180);
+				case 'motion':
+					var rotation = response.data.value;
+
+					playerRotation.x = -THREE.Math.degToRad(rotation.x);
+					playerRotation.y = THREE.Math.degToRad(rotation.y);
+					playerRotation.z = -THREE.Math.degToRad(rotation.z);
+
 					break;
 			}
 		});
+
+		var fps = {
+			startTime : 0,
+			frameNumber : 0,
+			getFPS : function(){
+				this.frameNumber++;
+				var d = new Date().getTime(),
+					currentTime = ( d - this.startTime ) / 1000,
+					result = Math.floor( ( this.frameNumber / currentTime ) );
+
+				if( currentTime > 1 ){
+					this.startTime = new Date().getTime();
+					this.frameNumber = 0;
+				}
+				return result;
+			}	
+		};
 	</script>
 </body>
 </html>
