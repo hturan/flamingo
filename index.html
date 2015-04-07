@@ -2,8 +2,8 @@
 <html>
 <head>
 	<title>flamingo</title>
-
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
+    <script  src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
 
 	<style type="text/css">
 		html, body {
@@ -85,7 +85,7 @@
 				scene.fog = new THREE.Fog( 0xffffff, 1, 5000 );
 				scene.fog.color.setHSL( 0.6, 0, 1 );
 
-				/*
+
 				controls = new THREE.TrackballControls( camera );
 
 				controls.rotateSpeed = 1.0;
@@ -97,7 +97,7 @@
 
 				controls.staticMoving = true;
 				controls.dynamicDampingFactor = 0.15;
-				*/
+
 
 				// LIGHTS
 
@@ -174,7 +174,7 @@
 					"stork":"models/animated/stork.js",
 					"horse":"models/animated/horse.js"};
 					
-					loader.load( models["parrot"], function( geometry ) {
+				loader.load( models["parrot"], function( geometry ) {
 
 					morphColorsToFaceColors( geometry );
 					geometry.computeMorphNormals();
@@ -321,11 +321,12 @@
 
 				}
 				// harleys merge
-				meshAnim.translateZ(0.5);
+				window.meshAnim.translateZ(0.5);
 
-				meshAnim.rotation.x = playerRotation.x;
-				meshAnim.rotation.y = playerRotation.y;
-				meshAnim.rotation.z = playerRotation.z;
+				window.meshAnim.rotation.x = playerRotation.x;
+				window.meshAnim.rotation.y = playerRotation.y;
+				window.meshAnim.rotation.z = playerRotation.z;
+                window.meshAnim.position.z = 0;
 				// player velocity (now using clock delta)
 				
 				//set from server
@@ -337,14 +338,14 @@
 
 				// keyboard velocities
 				window.meshAnim.position.x += (playerKeys["r"] - playerKeys["l"]) * 100 * delta;
-				window.meshAnim.position.y += (playerKeys["u"] - playerKeys["d"]) * 100 * delta;
+				window.meshAnim.position.y += (playerKeys["d"]-playerKeys["u"] ) * 100 * delta;
 				
 				//bullet
 				coolDown += delta ;
 				if (playerKeys["s"]) {
-					console.log("shot" + coolDown);
-					if (coolDown > 0.25) {
-						console.log("reset cooldown");
+					//console.log("shot " + coolDown);
+					if (coolDown > 0.5) {
+						//console.log("reset cooldown");
 						shootBullet(window.meshAnim.position, window.meshAnim.position);
 						coolDown = 0;
 						playerKeys["s"] = 0;
@@ -354,17 +355,20 @@
 				renderer.render( scene, camera );
 
 			}
-			var bullets = new Array();
-			var bulletGeometry = new THREE.SphereGeometry( 20, 32, 32 );
+			//bullets = [];
+			var bulletGeometry = new THREE.SphereGeometry(75, 32, 32 );
 			var bulletMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} );
 			function shootBullet( pos, vel) {
 				console.log("shot bullet from " + pos.x + "," + pos.y + "," +  pos.z);
 				var bulletMesh = new THREE.Mesh( bulletGeometry, bulletMaterial );
 				bulletMesh.castShadow = true;
 				bulletMesh.receiveShadow = true;
-				bulletMesh.position = pos;
-				bullets.push(bulletMesh);
+				bulletMesh.position.copy(pos);
+				//bullets.push(bulletMesh);
 				scene.add(bulletMesh);
+                console.log(bulletMesh);
+                console.log(pos);
+                camera.lookAt(pos);
 			}
 
 
