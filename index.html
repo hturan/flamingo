@@ -3,7 +3,6 @@
 <head>
 	<title>flamingo</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
-    <script  src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
 
 	<style type="text/css">
 		html, body {
@@ -84,20 +83,6 @@
 
 				scene.fog = new THREE.Fog( 0xffffff, 1, 5000 );
 				scene.fog.color.setHSL( 0.6, 0, 1 );
-
-
-				controls = new THREE.TrackballControls( camera );
-
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
-
-				controls.noZoom = false;
-				controls.noPan = false;
-
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.15;
-
 
 				// LIGHTS
 
