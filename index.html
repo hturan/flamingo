@@ -307,7 +307,7 @@
 				}
 				// harleys merge
 				window.meshAnim.translateZ(0.5);
-                var maxRotationSpeed = Math.PI/6; // = 30 degrees
+                var maxRotationSpeed = Math.PI/180; // = 30 degrees
                 var rotationDamping = 0.9;
 
                 var rotationDiff = (playerRotation.x - window.meshAnim.rotation.x) % (Math.PI*2);
