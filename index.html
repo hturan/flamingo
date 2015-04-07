@@ -307,10 +307,22 @@
 				}
 				// harleys merge
 				window.meshAnim.translateZ(0.5);
+                var maxRotationSpeed = Math.PI/6; // = 30 degrees
+                var rotationDamping = 0.9;
 
-				window.meshAnim.rotation.x = playerRotation.x;
-				window.meshAnim.rotation.y = playerRotation.y;
-				window.meshAnim.rotation.z = playerRotation.z;
+                var rotationDiff = (playerRotation.x - window.meshAnim.rotation.x) % (Math.PI*2);
+                if (rotationDiff>Math.PI) {rotationDiff=Math.PI*2-rotationDiff;}
+                rotationDiff = Math.min(maxRotationSpeed,Math.max(-maxRotationSpeed,rotationDiff*rotationDamping));
+				window.meshAnim.rotation.x += rotationDiff;
+                rotationDiff = (playerRotation.x - window.meshAnim.rotation.x) % (Math.PI*2);
+                if (rotationDiff>Math.PI) {rotationDiff=Math.PI*2-rotationDiff;}
+                rotationDiff = Math.min(maxRotationSpeed,Math.max(-maxRotationSpeed,rotationDiff*rotationDamping));
+				window.meshAnim.rotation.y += rotationDiff;
+                rotationDiff = (playerRotation.z - window.meshAnim.rotation.z) % (Math.PI*2);
+                if (rotationDiff>Math.PI) {rotationDiff=Math.PI*2-rotationDiff;}
+                rotationDiff = Math.min(maxRotationSpeed,Math.max(-maxRotationSpeed,rotationDiff*rotationDamping));
+				window.meshAnim.rotation.z += rotationDiff;
+
                 console.log(Math.round(window.meshAnim.rotation.x*10)/10 + ", " + Math.round(window.meshAnim.rotation.y*10)/10 + ", " + Math.round(window.meshAnim.rotation.z*10)/10 )
                 window.meshAnim.position.z = 0;
 				// player velocity (now using clock delta)
