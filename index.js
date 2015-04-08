@@ -2,6 +2,7 @@ var WebSocketServer = require("ws").Server
 var http = require("http")
 var finalhandler = require("finalhandler")
 var serveStatic = require("serve-static")
+var uuid = require("node-uuid");
 
 var port = process.env.PORT || 5000
 
@@ -18,23 +19,32 @@ server.listen(port);
 
 var wss = new WebSocketServer({server: server});
 
-var clients = [];
+var clients = {};
 
 wss.on('connection', function(ws) {
-  clients.push(ws);
+  var clientId = uuid.v4();
+
+  clients[clientId] = ws;
+
+  console.log('connected', clientId);
+
+  sendMessage('connected', {clientId: clientId});
 
   ws.on('close', function (ws) {
-    clients.splice(clients.indexOf(ws), 1);
+    console.log('disconnected', clientId);
+
+    sendMessage('disconnected', {clientId: clientId});
+    delete clients[clientId];
   });
 
-  ws.on('message', function incoming(data) {
+  ws.on('message', function (data) {
     data = JSON.parse(data);
 
-    if (data.client_type) {
-      console.log('set ', data.client_type);
-      clients[clients.indexOf(ws)].client_type = data.client_type;
+    if (data.clientType) {
+      console.log('set '+clientId+' as '+data.clientType);
+      clients[clientId].clientType = data.clientType;
     } else {
-      sendMessage('motion', {value: data});
+      sendMessage('motion', {value: data, clientId: clientId});
     }
   });
 });
@@ -92,9 +102,9 @@ function sendMessage (event, data) {
     data: data
   };
 
-  for (var i = 0; i < clients.length; i += 1) {
-    if (clients[i].client_type === 'renderer') {
-      clients[i].send(JSON.stringify(response));
+  for (var clientId in clients) {
+    if (clients[clientId].clientType === 'renderer') {
+      clients[clientId].send(JSON.stringify(response));
     }
   }
 }

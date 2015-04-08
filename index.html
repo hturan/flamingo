@@ -1,430 +1,406 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>flamingo</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
-    <script  src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
+  <title>flamingo</title>
 
-	<style type="text/css">
-		html, body {
-			height: 100%;
-			width: 100%;
-			position: relative;
-			margin: 0;
-			padding: 0;
-			border: 0;
-			overflow: hidden;
-		}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
 
-		div#fps {
-			position: absolute;
-			top: 10px;
-			left: 10px;
-			font-family: Courier;
-			font-weight: bold;
-			color: rgba(0,0,0,0.2);
-		}
-	</style>
+  <style type="text/css">
+    html, body {
+      height: 100%;
+      width: 100%;
+      position: relative;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+    }
+
+    div#fps {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: Courier;
+      font-weight: bold;
+      color: rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body>
-	<div id="fps"></div>
-	<div id="container"></div>
+  <div id="fps"></div>
+  <div id="container"></div>
 
-	<script type="x-shader/x-vertex" id="vertexShader">
+  <script type="x-shader/x-vertex" id="vertexShader">
 
-		varying vec3 vWorldPosition;
+    varying vec3 vWorldPosition;
 
-		void main() {
+    void main() {
 
-			vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
-			vWorldPosition = worldPosition.xyz;
+      vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+      vWorldPosition = worldPosition.xyz;
 
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 
-		}
+    }
 
-	</script>
+  </script>
 
-	<script type="x-shader/x-fragment" id="fragmentShader">
+  <script type="x-shader/x-fragment" id="fragmentShader">
 
-		uniform vec3 topColor;
-		uniform vec3 bottomColor;
-		uniform float offset;
-		uniform float exponent;
+    uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform float offset;
+    uniform float exponent;
 
-		varying vec3 vWorldPosition;
+    varying vec3 vWorldPosition;
 
-		void main() {
+    void main() {
 
-			float h = normalize( vWorldPosition + offset ).y;
-			gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h , 0.0), exponent ), 0.0 ) ), 1.0 );
+      float h = normalize( vWorldPosition + offset ).y;
+      gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h , 0.0), exponent ), 0.0 ) ), 1.0 );
 
-		}
+    }
 
-	</script>
+  </script>
 
-		<script>
-			var camera, scene, renderer, dirLight, hemiLight;
-			var morphs = [];
-			var stats;
+    <script>
+      var camera, scene, renderer, dirLight, hemiLight;
 
-			var clock = new THREE.Clock();
-			var coolDown = 0;
-			init();
-			animate();
+      var bullets = [];
+      var clients = {};
 
-			function init() {
+      var clock = new THREE.Clock();
+      var coolDown = 0;
 
-				var container = document.getElementById( 'container' );
+      init();
+      animate();
 
-				camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 5000 );
-				camera.position.set( 0, 0, 250 );
+      function init() {
+        var container = document.getElementById('container');
 
-				scene = new THREE.Scene();
+        // Camera
+        camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 5000);
+        camera.position.set(0, 0, 250);
 
-				scene.fog = new THREE.Fog( 0xffffff, 1, 5000 );
-				scene.fog.color.setHSL( 0.6, 0, 1 );
+        // Scene
+        scene = new THREE.Scene();
 
+        // Fog
+        scene.fog = new THREE.Fog(0xffffff, 1, 5000);
+        scene.fog.color.setHSL(0.6, 0, 1);
 
-				controls = new THREE.TrackballControls( camera );
+        // Lights
+        hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.8 );
+        hemiLight.color.setHSL( 1, 0.6, 0.6 );
+        hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+        hemiLight.position.set( 0, 500, 0 );
+        scene.add( hemiLight );
 
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
+        dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.color.setHSL(0.1, 1, 0.95);
+        dirLight.position.set(0, 200, 0);
 
-				controls.noZoom = false;
-				controls.noPan = false;
+        dirLight.castShadow = true;
 
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.15;
+        dirLight.shadowMapWidth = 2048;
+        dirLight.shadowMapHeight = 2048;
 
+        var d = 150;
+        dirLight.shadowCameraLeft = -d;
+        dirLight.shadowCameraRight = d;
+        dirLight.shadowCameraTop = d;
+        dirLight.shadowCameraBottom = -d;
 
-				// LIGHTS
+        dirLight.shadowDarkness = 0.3;
+        // dirLight.shadowCameraVisible = true;
 
-				hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
-				hemiLight.color.setHSL( 0.6, 1, 0.6 );
-				hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
-				hemiLight.position.set( 0, 500, 0 );
-				scene.add( hemiLight );
+        scene.add(dirLight);
 
-				//
 
-				dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
-				dirLight.color.setHSL( 0.1, 1, 0.95 );
-				dirLight.position.set( -1, 1.75, 1 );
-				dirLight.position.multiplyScalar( 50 );
-				scene.add( dirLight );
+        // Ground
+        var groundGeo = new THREE.PlaneBufferGeometry( 10000, 10000 );
+        var groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0x050505 } );
+        groundMat.color.setRGB( 0.98, 0.93, 0.69 );
 
-				dirLight.castShadow = true;
-
-				dirLight.shadowMapWidth = 2048;
-				dirLight.shadowMapHeight = 2048;
-
-				var d = 50;
-
-				dirLight.shadowCameraLeft = -d;
-				dirLight.shadowCameraRight = d;
-				dirLight.shadowCameraTop = d;
-				dirLight.shadowCameraBottom = -d;
-
-				dirLight.shadowCameraFar = 3500;
-				dirLight.shadowBias = -0.0001;
-				dirLight.shadowDarkness = 0.35;
-				// dirLight.shadowCameraVisible = true;
-
-				// GROUND
-
-				var groundGeo = new THREE.PlaneBufferGeometry( 10000, 10000 );
-				var groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0x050505 } );
-				groundMat.color.setRGB( 0.98, 0.93, 0.69 );
-
-				var ground = new THREE.Mesh( groundGeo, groundMat );
-				ground.rotation.x = -Math.PI/2;
-				ground.position.y = -33;
-				scene.add( ground );
-
-				ground.receiveShadow = true;
-
-				// SKYDOME
-
-				var vertexShader = document.getElementById( 'vertexShader' ).textContent;
-				var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
-				var uniforms = {
-					topColor: 	 { type: "c", value: new THREE.Color( 0x0077ff ) },
-					bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
-					offset:		 { type: "f", value: 33 },
-					exponent:	 { type: "f", value: 0.6 }
-				}
-				uniforms.topColor.value.copy( hemiLight.color );
-
-				scene.fog.color.copy( uniforms.bottomColor.value );
-
-				var skyGeo = new THREE.SphereGeometry( 4000, 32, 15 );
-				var skyMat = new THREE.ShaderMaterial( { vertexShader: vertexShader, fragmentShader: fragmentShader, uniforms: uniforms, side: THREE.BackSide } );
-
-				var sky = new THREE.Mesh( skyGeo, skyMat );
-				scene.add( sky );
-
-				// MODEL
-
-				var loader = new THREE.JSONLoader();
-				var models = {
-					"flamingo":"models/animated/flamingo.js",
-					"parrot":"models/animated/parrot.js",
-					"stork":"models/animated/stork.js",
-					"horse":"models/animated/horse.js"};
-					
-				loader.load( models["parrot"], function( geometry ) {
-
-					morphColorsToFaceColors( geometry );
-					geometry.computeMorphNormals();
-
-					var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, morphNormals: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
-					var meshAnim = new THREE.MorphAnimMesh( geometry, material );
-
-					window.meshAnim = meshAnim;
-
-					meshAnim.duration = 1000;
-
-					var s = 0.35;
-					meshAnim.scale.set( s, s, s );
-					meshAnim.position.y = 15;
-					// meshAnim.rotation.y = -1;
-
-					meshAnim.castShadow = true;
-					meshAnim.receiveShadow = true;
-
-					scene.add( meshAnim );
-					morphs.push( meshAnim );
-
-				} );
-
-				// RENDERER
-
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setClearColor( scene.fog.color );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-
-				renderer.gammaInput = true;
-				renderer.gammaOutput = true;
-
-				renderer.shadowMapEnabled = true;
-				renderer.shadowMapCullFace = THREE.CullFaceBack;
-
-				window.addEventListener( 'resize', onWindowResize, false );
-				document.addEventListener( 'keydown', onKeyDown, false );
-				document.addEventListener( 'keyup', onKeyUp, false );
-			}
-
-			function morphColorsToFaceColors( geometry ) {
-
-				if ( geometry.morphColors && geometry.morphColors.length ) {
-
-					var colorMap = geometry.morphColors[ 0 ];
-
-					for ( var i = 0; i < colorMap.colors.length; i ++ ) {
-
-						geometry.faces[ i ].color = colorMap.colors[ i ];
-
-					}
-
-				}
-
-			}
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			function onKeyDown ( event ) {
-
-				switch ( event.keyCode ) {
-
-					case 72: /*h*/
-
-					hemiLight.visible = !hemiLight.visible;
-					break;
-
-					case 68: /*d*/
-
-					dirLight.visible = !dirLight.visible;
-					break;
-					
-					case 65: /*a*/
-					console.log('a')
-					break;
-					
-					// space
-					case 32:
-					playerKeys["s"] = 1;
-					console.log("bullet");
-					break;
-					// arrow keys
-					case 37:
-					playerKeys["l"] = 1;
-					break;
-					case 39:
-					playerKeys["r"] = 1;
-					break;
-					case 38:
-					playerKeys["d"] = 1;
-					break;
-					case 40:
-					playerKeys["u"] = 1;
-					break;
-				}
-
-			}
-			function onKeyUp ( event ) {
-
-				switch ( event.keyCode ) {
-					case 37:
-					playerKeys["l"] = 0;
-					break;
-					case 39:
-					playerKeys["r"] = 0;
-					break;
-					case 38:
-					playerKeys["d"] = 0;
-					break;
-					case 40:
-					playerKeys["u"] = 0;
-					break;
-				}
-			}
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				render();
-				
-				document.getElementById('fps').innerText = fps.getFPS();
-			}
-			
-			function render() {
-
-				var delta = clock.getDelta();
-
-				//controls.update();
-
-				for ( var i = 0; i < morphs.length; i ++ ) {
-
-					morph = morphs[ i ];
-					morph.updateAnimation( 1000 * delta );
-
-				}
-				// harleys merge
-				window.meshAnim.translateZ(0.5);
-
-				window.meshAnim.rotation.x = playerRotation.x;
-				window.meshAnim.rotation.y = playerRotation.y;
-				window.meshAnim.rotation.z = playerRotation.z;
-                window.meshAnim.position.z = 0;
-				// player velocity (now using clock delta)
-				
-				//set from server
-				//window.meshAnim.position.x += playerPosition.x * 1000 * delta;
-				//window.meshAnim.position.y += playerPosition.y * 1000 * delta;
-
-				//window.meshAnim.rotation.x = playerRotation.x * 1000 * delta;
-				//window.meshAnim.rotation.y = playerRotation.y * 1000 * delta;
-
-				// keyboard velocities
-				window.meshAnim.position.x += (playerKeys["r"] - playerKeys["l"]) * 100 * delta;
-				window.meshAnim.position.y += (playerKeys["d"]-playerKeys["u"] ) * 100 * delta;
-				
-				//bullet
-				coolDown += delta ;
-				if (playerKeys["s"]) {
-					//console.log("shot " + coolDown);
-					if (coolDown > 0.5) {
-						//console.log("reset cooldown");
-						shootBullet(window.meshAnim.position, window.meshAnim.position);
-						coolDown = 0;
-						playerKeys["s"] = 0;
-					}
-				}
-
-				renderer.render( scene, camera );
-
-			}
-			//bullets = [];
-			var bulletGeometry = new THREE.SphereGeometry(75, 32, 32 );
-			var bulletMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} );
-			function shootBullet( pos, vel) {
-				console.log("shot bullet from " + pos.x + "," + pos.y + "," +  pos.z);
-				var bulletMesh = new THREE.Mesh( bulletGeometry, bulletMaterial );
-				bulletMesh.castShadow = true;
-				bulletMesh.receiveShadow = true;
-				bulletMesh.position.copy(pos);
-				//bullets.push(bulletMesh);
-				scene.add(bulletMesh);
-                console.log(bulletMesh);
-                console.log(pos);
-                camera.lookAt(pos);
-			}
-
-
-	</script>
-
-	<script type="text/javascript">
-		var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
-
-		ws.onopen = function () {
-      ws.send(JSON.stringify({client_type: 'renderer'}));
+        var ground = new THREE.Mesh( groundGeo, groundMat );
+        
+        ground.rotation.x = -Math.PI/2;
+        ground.position.y = -33;
+        
+        scene.add(ground);
+
+        ground.receiveShadow = true;
+
+
+        // Sky
+        var vertexShader = document.getElementById( 'vertexShader' ).textContent;
+        var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+        var uniforms = {
+          topColor:    { type: "c", value: new THREE.Color( 0x0077ff ) },
+          bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
+          offset:    { type: "f", value: 33 },
+          exponent:  { type: "f", value: 0.6 }
+        }
+        uniforms.topColor.value.copy( hemiLight.color );
+
+        scene.fog.color.copy( uniforms.bottomColor.value );
+
+        var skyGeo = new THREE.SphereGeometry( 4000, 32, 15 );
+        var skyMat = new THREE.ShaderMaterial( { vertexShader: vertexShader, fragmentShader: fragmentShader, uniforms: uniforms, side: THREE.BackSide } );
+
+        var sky = new THREE.Mesh(skyGeo, skyMat);
+        scene.add(sky);
+
+        // createClient();
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( scene.fog.color );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild( renderer.domElement );
+
+        renderer.gammaInput = true;
+        renderer.gammaOutput = true;
+
+        renderer.shadowMapEnabled = true;
+        renderer.shadowMapCullFace = THREE.CullFaceBack;
+
+
+        window.addEventListener( 'resize', onWindowResize, false );
+        document.addEventListener( 'keydown', onKeyDown, false );
+        document.addEventListener( 'keyup', onKeyUp, false );
+      }
+
+      function morphColorsToFaceColors( geometry ) {
+
+        if ( geometry.morphColors && geometry.morphColors.length ) {
+
+          var colorMap = geometry.morphColors[ 0 ];
+
+          for ( var i = 0; i < colorMap.colors.length; i ++ ) {
+
+            geometry.faces[ i ].color = colorMap.colors[ i ];
+
+          }
+
+        }
+
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function onKeyDown ( event ) {
+        switch (event.keyCode) {
+          // space
+          case 32:
+          playerKeys["s"] = 1;
+          break;
+
+          // arrow keys
+          case 37:
+          playerKeys["l"] = 1;
+          break;
+          case 39:
+          playerKeys["r"] = 1;
+          break;
+          case 38:
+          playerKeys["d"] = 1;
+          break;
+          case 40:
+          playerKeys["u"] = 1;
+          break;
+        }
+      }
+      
+      function onKeyUp (event) {
+        switch (event.keyCode) {
+          case 37:
+          playerKeys["l"] = 0;
+          break;
+          case 39:
+          playerKeys["r"] = 0;
+          break;
+          case 38:
+          playerKeys["d"] = 0;
+          break;
+          case 40:
+          playerKeys["u"] = 0;
+          break;
+        }
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        render();
+        
+        document.getElementById('fps').innerText = fps.getFPS();
+      }
+      
+      function render() {
+        var delta = clock.getDelta();
+
+        // Render clients
+        for (var clientId in clients) {
+          var client = clients[clientId];
+
+          client.mesh.updateAnimation(1000 * delta);
+
+          client.mesh.rotation.x = client.rotation.x;
+          client.mesh.rotation.y = client.rotation.y;
+          client.mesh.rotation.z = client.rotation.z;
+
+          client.mesh.translateZ(0.5);
+        }
+
+        // Render bullets
+        for (var i = 0; i < bullets.length; i += 1) {
+          var bullet = bullets[i];
+          bullet.translateZ(5);
+        }
+
+        //bullet
+        coolDown += delta ;
+        if (playerKeys["s"]) {
+          if (coolDown > 0.001) {
+            for (var clientId in clients) {
+              shootBullet(clients[clientId]);
+            }
+            
+            coolDown = 0;
+            playerKeys["s"] = 0;
+          }
+        }
+
+        renderer.render( scene, camera );
+
+      }
+
+      function shootBullet(client) {
+        var bulletGeometry = new THREE.SphereGeometry(0.8);
+        var bulletMaterial = new THREE.MeshBasicMaterial( { color: 0x333333 } );
+
+        var cube = new THREE.Mesh( bulletGeometry, bulletMaterial );
+
+        var pos = client.mesh.position;
+        var rot = client.mesh.rotation;
+
+        cube.position.set(pos.x, pos.y, pos.z);
+        cube.rotation.set(rot.x, rot.y, rot.z);
+
+        scene.add(cube);
+        bullets.push(cube);
+      }
+
+      function createClient(clientId) {
+        // Model
+        var loader = new THREE.JSONLoader();
+        var models = {
+          "flamingo":"models/flamingo.js",
+          "parrot":"models/parrot.js",
+          "stork":"models/stork.js",
+          "horse":"models/horse.js"
+        };
+          
+        loader.load(models["flamingo"], function (geometry) {
+          morphColorsToFaceColors(geometry);
+          geometry.computeMorphNormals();
+
+          var material = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            specular: 0xffffff,
+            shininess: 20,
+            morphTargets: true,
+            morphNormals: true,
+            vertexColors: THREE.FaceColors,
+            shading: THREE.FlatShading
+          });
+
+          var mesh = new THREE.MorphAnimMesh(geometry, material);
+
+          mesh.duration = 1000;
+
+          mesh.scale.set(0.35, 0.35, 0.35);
+          mesh.position.y = 15;
+
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          scene.add(mesh);
+
+          clients[clientId] = {
+            mesh: mesh,
+            rotation: {
+              x: 0,
+              y: 0,
+              z: 0
+            }
+          };
+        });
+      }
+
+      function removeClient(clientId) {
+        scene.remove(clients[clientId].mesh);
+        delete clients[clientId];
+      }
+  </script>
+
+  <script type="text/javascript">
+    var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
+
+    ws.onopen = function () {
+      ws.send(JSON.stringify({clientType: 'renderer'}));
       webSocketActive = true;
     };
 
-		var playerPosition = {x:0, y:0, z:0};
-		var playerRotation = {x:0, y:0, z:0};
-		var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
+    var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
-		ws.addEventListener("message", function(response) {
-			var response = JSON.parse(response.data);
+    ws.addEventListener("message", function(response) {
+      var response = JSON.parse(response.data);
 
-			switch (response.event) {
-				case 'x.press':
-					break;
-				case 'x.release':
-					break;
-				case 'left.move':
-					playerPosition.x = (response.data.x - 128) / 100;
-					playerPosition.y = (response.data.y - 128) / 100;
-					break;
-				case 'motion':
-					var rotation = response.data.value;
+      switch (response.event) {
+        case 'connected':
+          console.log('connected', response.data.clientId);
+          createClient(response.data.clientId);
+          break;
+        case 'disconnected':
+          console.log('disconnected', response.data.clientId);
+          removeClient(response.data.clientId);
+          break;
+        case 'motion':
+          var rotation = response.data.value;
+          var clientId = response.data.clientId;
 
-					playerRotation.x = -THREE.Math.degToRad(rotation.x);
-					playerRotation.y = THREE.Math.degToRad(rotation.y);
-					playerRotation.z = -THREE.Math.degToRad(rotation.z);
+          clients[clientId].rotation.x = -THREE.Math.degToRad(rotation.x);
+          clients[clientId].rotation.y = THREE.Math.degToRad(rotation.y);
+          clients[clientId].rotation.z = -THREE.Math.degToRad(rotation.z);
 
-					break;
-			}
-		});
+          break;
+      }
+    });
 
-		var fps = {
-			startTime : 0,
-			frameNumber : 0,
-			getFPS : function(){
-				this.frameNumber++;
-				var d = new Date().getTime(),
-					currentTime = ( d - this.startTime ) / 1000,
-					result = Math.floor( ( this.frameNumber / currentTime ) );
+    var fps = {
+      startTime : 0,
+      frameNumber : 0,
+      getFPS : function(){
+        this.frameNumber++;
+        var d = new Date().getTime(),
+          currentTime = ( d - this.startTime ) / 1000,
+          result = Math.floor( ( this.frameNumber / currentTime ) );
 
-				if( currentTime > 1 ){
-					this.startTime = new Date().getTime();
-					this.frameNumber = 0;
-				}
-				return result;
-			}	
-		};
-	</script>
+        if( currentTime > 1 ){
+          this.startTime = new Date().getTime();
+          this.frameNumber = 0;
+        }
+        return result;
+      } 
+    };
+  </script>
 </body>
 </html>
