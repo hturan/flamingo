@@ -69,6 +69,10 @@
 
 			var clock = new THREE.Clock();
 			var coolDown = 0;
+
+            var scenery = [];
+            var sceneryDispersion = 2000; // how much the cubes should be scattered about
+            var numSceneryObjects = 40;
 			init();
 			animate();
 
@@ -130,6 +134,26 @@
 
 				ground.receiveShadow = true;
 
+                // CUBES
+
+                var geometry = new THREE.BoxGeometry( 6, 6, 6 );
+				var material = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+
+                //var material = new THREE.MeshBasicMaterial( {color: 0xddaabb, specular: 0x050505 } );
+                for (var i=0;i<numSceneryObjects;i++) {
+                    var cube = new THREE.Mesh(geometry, material);
+                    cube.position.y = -33 + Math.random();
+
+                    cube.position.x = (-0.5 + Math.random())*sceneryDispersion;
+                    cube.position.z = camera.position.z-Math.random()*sceneryDispersion; // spawn the cubes only in front of the camera
+                    cube.rotation.x = -Math.PI / 4;
+                    cube.rotation.y = -Math.PI / 4;
+                    cube.rotation.z = Math.random() * 2 * Math.PI;
+                    cube.castShadow = true;
+                    cube.receiveShadow = true;
+                    scenery.push(cube);
+                    scene.add(cube);
+                }
 				// SKYDOME
 
 				var vertexShader = document.getElementById( 'vertexShader' ).textContent;
@@ -289,7 +313,7 @@
 				requestAnimationFrame( animate );
 
 				render();
-				
+
 				document.getElementById('fps').innerText = fps.getFPS();
 			}
 			
@@ -306,7 +330,7 @@
 
 				}
 				// harleys merge
-				window.meshAnim.translateZ(0.5);
+				window.meshAnim.translateZ(0.5*4);
                 var maxRotationSpeed = Math.PI/180; // = 30 degrees
                 var rotationDamping = 0.9;
 
@@ -324,6 +348,15 @@
 				window.meshAnim.rotation.z += rotationDiff;
 
                 console.log(Math.round(window.meshAnim.rotation.x*10)/10 + ", " + Math.round(window.meshAnim.rotation.y*10)/10 + ", " + Math.round(window.meshAnim.rotation.z*10)/10 )
+
+                var cutoffZ = camera.position.z-sceneryDispersion; // furthest distance the scenery gets before respawning
+                scenery.forEach(function(entry) {
+                    entry.position.z -= window.meshAnim.position.z;
+                    if (entry.position.z<cutoffZ) {
+                        entry.position.z += sceneryDispersion;
+                        entry.position.x = (-0.5 + Math.random())*sceneryDispersion;
+
+                    }});
                 window.meshAnim.position.z = 0;
 				// player velocity (now using clock delta)
 				
