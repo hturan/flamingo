@@ -431,7 +431,7 @@
            		var zee = new THREE.Vector3( 0, 0, 1 );
 
            		var q0 = new THREE.Quaternion();
-        		var q1 = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) ); // - PI/2 around the x-axis
+        		var q1 = new THREE.Quaternion( 0, 0, 0, 1 ); // - PI/2 around the x-axis
 
 			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
        			window.meshAnim.quaternion.setFromEuler( euler );                               // orient the device
