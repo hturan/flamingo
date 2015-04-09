@@ -357,8 +357,12 @@
                     if (entry.position.z<cutoffZ) {
                         entry.position.z += sceneryDispersion;
                         entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
-
-                    }});
+                    }
+                    if (entry.position.z>camera.position.z) {
+                        entry.position.z -= sceneryDispersion;
+                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
+                    }
+                });
                 window.meshAnim.position.z = 0;
 				// player velocity (now using clock delta)
 
