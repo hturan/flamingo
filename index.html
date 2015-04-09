@@ -1,36 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>flamingo</title>
+    <title>flamingo</title>
 
-  <script src="js/three.min.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js/Oimo.min.js"></script>
+    <script src="js/v3d.js"></script>
+    <script src="js/threex.oimo.js"></script>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            overflow: hidden;
+        }
 
-  <style type="text/css">
-    html, body {
-      height: 100%;
-      width: 100%;
-      position: relative;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      overflow: hidden;
-    }
-
-    div#fps {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-family: Courier;
-      font-weight: bold;
-      color: rgba(0,0,0,0.2);
-    }
-  </style>
+        div#fps {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: Courier;
+            font-weight: bold;
+            color: rgba(0,0,0,0.2);
+        }
+    </style>
 </head>
 <body>
-  <div id="fps"></div>
-  <div id="container"></div>
+<div id="fps"></div>
+<div id="container"></div>
 
-  <script type="x-shader/x-vertex" id="vertexShader">
+<script type="x-shader/x-vertex" id="vertexShader">
 
     varying vec3 vWorldPosition;
 
@@ -63,232 +65,271 @@
 
   </script>
 
-    <script>
-      var camera, scene, renderer, dirLight, hemiLight;
+<script>
 
-      var bullets = [];
-      var clients = {};
+// three.js view with geometrys and materials ../js/v3d.js
+//var v3d = new V3D.View();
+</script>
+<script>
+// OIMO SHIZZLE GOES UP HERE
+// create oimo world contains all rigidBodys and joint.
+var world	= new OIMO.World(1/360, 2, 8);
+var onRenderFcts= []; // contains all the functions to update mesh-physics relationships
+
+var lastTimeMsec= null
+
+setInterval(function(){
+    world.step()
+}, 1000/180);
+
+var camera, scene, renderer, dirLight, hemiLight;
+
+var bullets = [];
+var clients = {};
+createClient(1); // test client (for sven's shite localhost)
+
+var scenery = [];
+var sceneryDispersion = 2000; // how much the cubes should be scattered about
+var numSceneryObjects = 40;
       
-      var scenery = [];
-      var sceneryDispersion = 2000; // how much the cubes should be scattered about
-      var numSceneryObjects = 40;
-      
-      var clock = new THREE.Clock();
-      var coolDown = 0;
+var clock = new THREE.Clock();
+var coolDown = 0;
 
-      var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
+var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0,"p":1};
 
-      init();
-      animate();
+init();
+animate();
 
-      function init() {
-        var container = document.getElementById('container');
+function init() {
+    var container = document.getElementById('container');
 
-        // Camera
-        camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 5000);
-        camera.position.set(0, 0, 250);
+    // Camera
+    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 5000);
+    camera.position.set(0, 0, 250);
 
-        // Scene
-        scene = new THREE.Scene();
+    // Scene
+    scene = new THREE.Scene();
 
-        // Fog
-        scene.fog = new THREE.Fog(0xffffff, 1, 5000);
-        scene.fog.color.setHSL(0.6, 0, 1);
+    // Fog
+    scene.fog = new THREE.Fog(0xffffff, 1, 5000);
+    scene.fog.color.setHSL(0.6, 0, 1);
 
-        // Lights
-        hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.8 );
-        hemiLight.color.setHSL( 1, 0.6, 0.6 );
-        hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
-        hemiLight.position.set( 0, 500, 0 );
-        scene.add( hemiLight );
+    // Lights
+    hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.8 );
+    hemiLight.color.setHSL( 1, 0.6, 0.6 );
+    hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+    hemiLight.position.set( 0, 500, 0 );
+    scene.add( hemiLight );
 
-        dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.color.setHSL(0.1, 1, 0.95);
-        dirLight.position.set(0, 200, 0);
+    dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.color.setHSL(0.1, 1, 0.95);
+    dirLight.position.set(0, 200, 0);
 
-        dirLight.castShadow = true;
+    dirLight.castShadow = true;
 
-        dirLight.shadowMapWidth = 2048;
-        dirLight.shadowMapHeight = 2048;
+    dirLight.shadowMapWidth = 2048;
+    dirLight.shadowMapHeight = 2048;
 
-        var d = 150;
-        dirLight.shadowCameraLeft = -d;
-        dirLight.shadowCameraRight = d;
-        dirLight.shadowCameraTop = d;
-        dirLight.shadowCameraBottom = -d;
+    var d = 150;
+    dirLight.shadowCameraLeft = -d;
+    dirLight.shadowCameraRight = d;
+    dirLight.shadowCameraTop = d;
+    dirLight.shadowCameraBottom = -d;
 
-        dirLight.shadowDarkness = 0.3;
-        // dirLight.shadowCameraVisible = true;
+    dirLight.shadowDarkness = 0.3;
+    // dirLight.shadowCameraVisible = true;
 
 
-        scene.add(dirLight);
+    scene.add(dirLight);
 
 
-        // Ground
-        var groundGeo = new THREE.PlaneBufferGeometry( 10000, 10000 );
-        var groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0x050505 } );
-        groundMat.color.setRGB( 0.98, 0.93, 0.69 );
+    // Ground
+    var groundGeo = new THREE.PlaneBufferGeometry( 10000, 10000 );
+    var groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0x050505 } );
+    groundMat.color.setRGB( 0.98, 0.93, 0.69 );
 
-        var ground = new THREE.Mesh( groundGeo, groundMat );
+    var ground = new THREE.Mesh( groundGeo, groundMat );
         
-        ground.rotation.x = -Math.PI/2;
-        ground.position.y = -33;
-        
-        scene.add(ground);
+    ground.rotation.x = -Math.PI/2;
+    ground.position.y = -33;
+    ground.receiveShadow = true;
 
-        ground.receiveShadow = true;
+    //scene.add(ground);
+    // gotta make a box version since Oimo can't deal with plane geometries
+    var groundGeo2 = new THREE.BoxGeometry(10000,10,10000);
+    var ground2 = new THREE.Mesh( groundGeo2, groundMat );
+    //ground2.rotation.x = -Math.PI/2;
+    ground2.position.y = -33; // the extra 5 should account for the height of 10?
+    ground2.receiveShadow = true;
+    scene.add(ground2);
 
-        // CUBES
+    var groundBody = THREEx.Oimo.createBodyFromMesh(world, ground2, {move:false})
+    onRenderFcts.push(function (delta) {
+        THREEx.Oimo.updateObject3dWithBody(ground2, groundBody);
+    });
 
-        var geometry = new THREE.BoxGeometry( 6, 6, 6 );
-        var material = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+    // CUBES
 
-        for (var i=0;i<numSceneryObjects;i++) {
+    var geometry = new THREE.BoxGeometry( 6, 6, 6 );
+    var material = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+
+    for (var i=0;i<numSceneryObjects;i++) {
+      	(function() {
+
             var cube = new THREE.Mesh(geometry, material);
-            cube.position.y = -33 + Math.random();
+            cube.position.y = -33 + Math.random() + 10;
 
-            cube.position.x = (-0.5 + Math.random())*sceneryDispersion;
-            cube.position.z = camera.position.z-Math.random()*sceneryDispersion; // spawn the cubes only in front of the camera
+            cube.position.x = (-0.5 + Math.random()) * sceneryDispersion;
+            cube.position.z = camera.position.z - Math.random() * sceneryDispersion; // spawn the cubes only in front of the camera
             cube.rotation.x = -Math.PI / 4;
             cube.rotation.y = -Math.PI / 4;
             cube.rotation.z = Math.random() * 2 * Math.PI;
-            var s = 1+Math.random();
-            cube.scale.set( s, s, s );
+            var s = 1 + Math.random();
+            cube.scale.set(s, s, s);
             cube.castShadow = true;
             cube.receiveShadow = true;
             scenery.push(cube);
             scene.add(cube);
-        }
+            var cubeBody = THREEx.Oimo.createBodyFromMesh(world, cube);
+            onRenderFcts.push(function (delta) {
+                THREEx.Oimo.updateObject3dWithBody(cube, cubeBody);
+            });
+	    })();
+    }
           
-        // Sky
-        var vertexShader = document.getElementById( 'vertexShader' ).textContent;
-        var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
-        var uniforms = {
-          topColor:    { type: "c", value: new THREE.Color( 0x0077ff ) },
-          bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
-          offset:    { type: "f", value: 33 },
-          exponent:  { type: "f", value: 0.6 }
-        };
-        uniforms.topColor.value.copy( hemiLight.color );
+    // Sky
+    var vertexShader = document.getElementById( 'vertexShader' ).textContent;
+    var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+    var uniforms = {
+        topColor:    { type: "c", value: new THREE.Color( 0x0077ff ) },
+        bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
+        offset:    { type: "f", value: 33 },
+        exponent:  { type: "f", value: 0.6 }
+    };
+    uniforms.topColor.value.copy( hemiLight.color );
 
-        scene.fog.color.copy( uniforms.bottomColor.value );
+    scene.fog.color.copy( uniforms.bottomColor.value );
 
-        var skyGeo = new THREE.SphereGeometry( 4000, 32, 15 );
-        var skyMat = new THREE.ShaderMaterial( { vertexShader: vertexShader, fragmentShader: fragmentShader, uniforms: uniforms, side: THREE.BackSide } );
+    var skyGeo = new THREE.SphereGeometry( 4000, 32, 15 );
+    var skyMat = new THREE.ShaderMaterial( { vertexShader: vertexShader, fragmentShader: fragmentShader, uniforms: uniforms, side: THREE.BackSide } );
 
-        var sky = new THREE.Mesh(skyGeo, skyMat);
-        scene.add(sky);
+    var sky = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(sky);
 
-        // createClient();
+    // createClient();
 
-        // Renderer
-        renderer = new THREE.WebGLRenderer( { antialias: true } );
-        renderer.setClearColor( scene.fog.color );
-        renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        container.appendChild( renderer.domElement );
+    // Renderer
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setClearColor( scene.fog.color );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    container.appendChild( renderer.domElement );
 
-        renderer.gammaInput = true;
-        renderer.gammaOutput = true;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
 
-        renderer.shadowMapEnabled = true;
-        renderer.shadowMapCullFace = THREE.CullFaceBack;
+    renderer.shadowMapEnabled = true;
+    renderer.shadowMapCullFace = THREE.CullFaceBack;
 
 
-        window.addEventListener( 'resize', onWindowResize, false );
-        document.addEventListener( 'keydown', onKeyDown, false );
-        document.addEventListener( 'keyup', onKeyUp, false );
-      }
+    window.addEventListener( 'resize', onWindowResize, false );
+    document.addEventListener( 'keydown', onKeyDown, false );
+    document.addEventListener( 'keyup', onKeyUp, false );
+}
 
-      function morphColorsToFaceColors( geometry ) {
+function morphColorsToFaceColors( geometry ) {
 
-        if ( geometry.morphColors && geometry.morphColors.length ) {
+    if ( geometry.morphColors && geometry.morphColors.length ) {
 
-          var colorMap = geometry.morphColors[ 0 ];
+        var colorMap = geometry.morphColors[ 0 ];
 
-          for ( var i = 0; i < colorMap.colors.length; i ++ ) {
+        for ( var i = 0; i < colorMap.colors.length; i ++ ) {
 
             geometry.faces[ i ].color = colorMap.colors[ i ];
 
-          }
-
         }
 
-      }
+    }
 
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+}
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      }
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 
-      function onKeyDown ( event ) {
-        switch (event.keyCode) {
-          // space
-          case 32:
-          playerKeys["s"] = 1;
-          break;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
-          // arrow keys
-          case 37:
-          playerKeys["l"] = 1;
-          break;
-          case 39:
-          playerKeys["r"] = 1;
-          break;
-          case 38:
-          playerKeys["d"] = 1;
-          break;
-          case 40:
-          playerKeys["u"] = 1;
-          break;
-        }
-      }
+function onKeyDown ( event ) {
+    switch (event.keyCode) {
+        // p (hide collision box)
+        case 80:
+            playerKeys["p"] = !playerKeys["p"];
+            break;
+        // space
+        case 32:
+            playerKeys["s"] = 1;
+            break;
+
+        // arrow keys
+        case 37:
+            playerKeys["l"] = 1;
+            break;
+        case 39:
+            playerKeys["r"] = 1;
+            break;
+        case 38:
+            playerKeys["d"] = 1;
+            break;
+        case 40:
+            playerKeys["u"] = 1;
+            break;
+    }
+}
       
-      function onKeyUp (event) {
-        switch (event.keyCode) {
-          case 37:
-          playerKeys["l"] = 0;
-          break;
-          case 39:
-          playerKeys["r"] = 0;
-          break;
-          case 38:
-          playerKeys["d"] = 0;
-          break;
-          case 40:
-          playerKeys["u"] = 0;
-          break;
-        }
-      }
+function onKeyUp (event) {
+    switch (event.keyCode) {
+        case 37:
+            playerKeys["l"] = 0;
+            break;
+        case 39:
+            playerKeys["r"] = 0;
+            break;
+        case 38:
+            playerKeys["d"] = 0;
+            break;
+        case 40:
+            playerKeys["u"] = 0;
+            break;
+    }
+}
 
-      function animate() {
-        requestAnimationFrame(animate);
+function animate() {
+    requestAnimationFrame(animate);
 
-        render();
+    render();
         
-        //document.getElementById('fps').innerText = window.fps.getFPS();
-      }
+    //document.getElementById('fps').innerText = window.fps.getFPS();
+}
 
-      window.fps = {
-          startTime : 0,
-          frameNumber : 0,
-          getFPS : function(){
-            this.frameNumber++;
-            var d = new Date().getTime(),
-              currentTime = ( d - this.startTime ) / 1000,
-              result = Math.floor( ( this.frameNumber / currentTime ) );
+window.fps = {
+    startTime : 0,
+    frameNumber : 0,
+    getFPS : function(){
+        this.frameNumber++;
+        var d = new Date().getTime(),
+                currentTime = ( d - this.startTime ) / 1000,
+                result = Math.floor( ( this.frameNumber / currentTime ) );
 
-            if( currentTime > 1 ){
-              this.startTime = new Date().getTime();
-              this.frameNumber = 0;
-            }
-            return result;
-          }
-        };
-      function render() {
-        var delta = clock.getDelta();
+        if( currentTime > 1 ){
+            this.startTime = new Date().getTime();
+            this.frameNumber = 0;
+        }
+        return result;
+    }
+};
+function render() {
+    var delta = clock.getDelta();
 
 // can delete?
 //                // move scenery and respawn if too far away
@@ -307,16 +348,16 @@
 //                window.meshAnim.position.z = 0;
 
 
-        // Render clients
-        for (var clientId in clients) {
-          var client = clients[clientId];
+    // Render clients
+    for (var clientId in clients) {
+        var client = clients[clientId];
 
-          client.mesh.updateAnimation(1000 * delta);
+        client.mesh.updateAnimation(1000 * delta);
 
-          //client.mesh.rotation.x = client.rotation.x;
-          //client.mesh.rotation.y = client.rotation.y;
-          //client.mesh.rotation.z = client.rotation.z;
-          if (client.rotation.enabled) {
+        //client.mesh.rotation.x = client.rotation.x;
+        //client.mesh.rotation.y = client.rotation.y;
+        //client.mesh.rotation.z = client.rotation.z;
+        if (client.rotation.enabled) {
             var euler = new THREE.Euler();
             var zee = new THREE.Vector3(0, 0, 1);
 
@@ -328,64 +369,88 @@
             q1.multiply(q0.setFromAxisAngle(zee, -client.rotation.o));    // adjust for screen orientation
             //smooth (slerp) dat quat!
             client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
-          }
-          client.mesh.translateZ(2);
+        } else {
+            var q=new THREE.Quaternion;
+            // X - left and right rotation, first check if the keys are being pressed but not both at once:
+            if (!(playerKeys["l"] && playerKeys["r"]) && (playerKeys["l"] || playerKeys["r"])) {
+                q.setFromAxisAngle(new THREE.Vector3(0, 1, 0),
+                                (playerKeys["l"] - playerKeys["r"]) * delta*3);
+                client.mesh.quaternion.multiply(q);
+            }
+            // Y - up and down rotation, first check if the keys are being pressed but not both at once:
+            if (!(playerKeys["u"] && playerKeys["d"]) && (playerKeys["u"] || playerKeys["d"])) {
+                q.setFromAxisAngle(new THREE.Vector3(1, 0, 0),
+                                (playerKeys["u"] - playerKeys["d"]) * delta*3);
+                client.mesh.quaternion.multiply(q);
+            }
         }
+        client.mesh.translateZ(0);
+    }
 
-        // Render bullets
-        for (var i = 0; i < bullets.length; i += 1) {
-          var bullet = bullets[i];
-          bullet.translateZ(6);
-        }
+    // Render bullets
+    for (var i = 0; i < bullets.length; i += 1) {
+        var bullet = bullets[i];
+        bullet.translateZ(6);
+    }
 
-        //bullet
-        coolDown += delta ;
-        if (playerKeys["s"]) {
-          if (coolDown > 0.001) {
+    //bullet
+    coolDown += delta ;
+    if (playerKeys["s"]) {
+        if (coolDown > 0.001) {
             for (var clientId in clients) {
-              shootBullet(clients[clientId]);
+                shootBullet(clients[clientId]);
             }
             
             coolDown = 0;
             playerKeys["s"] = 0;
-          }
         }
+    }
 
-        renderer.render( scene, camera );
+    // all of oimo's stuff
+    // measure time
+    lastTimeMsec	= lastTimeMsec || delta-1000/60
+    var deltaMsec	= Math.min(200, delta - lastTimeMsec) // I don't think it can handle small deltas
+    lastTimeMsec	= delta
+    // call each update function
+    onRenderFcts.forEach(function(onRenderFct){
+			onRenderFct(deltaMsec/1000, delta/1000)
+		});
 
-      }
+    renderer.render( scene, camera );
 
-      function shootBullet(client) {
-        var bulletGeometry = new THREE.SphereGeometry(0.8);
-        var bulletMaterial = new THREE.MeshBasicMaterial( { color: 0x333333 } );
+}
 
-        var cube = new THREE.Mesh( bulletGeometry, bulletMaterial );
+function shootBullet(client) {
+    var bulletGeometry = new THREE.SphereGeometry(0.8);
+    var bulletMaterial = new THREE.MeshBasicMaterial( { color: 0x333333 } );
 
-        var pos = client.mesh.position;
-        var rot = client.mesh.rotation;
+    var cube = new THREE.Mesh( bulletGeometry, bulletMaterial );
 
-        cube.position.set(pos.x, pos.y, pos.z);
-        cube.rotation.set(rot.x, rot.y, rot.z);
+    var pos = client.mesh.position;
+    var rot = client.mesh.rotation;
 
-        scene.add(cube);
-        bullets.push(cube);
-      }
+    cube.position.set(pos.x, pos.y, pos.z);
+    cube.rotation.set(rot.x, rot.y, rot.z);
 
-      function createClient(clientId) {
-        // Model
-        var loader = new THREE.JSONLoader();
-        var models = {
-          "flamingo":"models/flamingo.js",
-          "parrot":"models/parrot.js",
-          "stork":"models/stork.js",
-          "horse":"models/horse.js"
-        };
+    scene.add(cube);
+    bullets.push(cube);
+}
+
+function createClient(clientId) {
+    // Model
+    var loader = new THREE.JSONLoader();
+    var models = {
+        "flamingo":"models/flamingo.js",
+        "parrot":"models/parrot.js",
+        "stork":"models/stork.js",
+        "horse":"models/horse.js"
+    };
           
-        loader.load(models["flamingo"], function (geometry) {
-          morphColorsToFaceColors(geometry);
-          geometry.computeMorphNormals();
+    loader.load(models["flamingo"], function (geometry) {
+        morphColorsToFaceColors(geometry);
+        geometry.computeMorphNormals();
 
-          var material = new THREE.MeshPhongMaterial({
+        var material = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             specular: 0xffffff,
             shininess: 20,
@@ -393,73 +458,99 @@
             morphNormals: true,
             vertexColors: THREE.FaceColors,
             shading: THREE.FlatShading
-          });
+        });
 
-          var mesh = new THREE.MorphAnimMesh(geometry, material);
+        var mesh = new THREE.MorphAnimMesh(geometry, material);
 
-          mesh.duration = 1000;
+        mesh.duration = 1000;
 
-          mesh.scale.set(0.35, 0.35, 0.35);
-          mesh.position.y = 15;
+        mesh.scale.set(0.35, 0.35, 0.35);
+        mesh.position.y = 15;
 
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
 
-          scene.add(mesh);
+        scene.add(mesh);
 
-          clients[clientId] = {
+        // now add some cubes for the OIMO
+        var cubegeometry = new THREE.BoxGeometry( 10,7,24);
+        var cubematerial = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+
+        var cube = new THREE.Mesh( cubegeometry, cubematerial );
+
+        cube.position.copy(mesh.position);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        cube.quaternion.copy(mesh.quaternion);
+        cube.translateY(-2);
+
+        scene.add(cube);
+        var meshBody = THREEx.Oimo.createBodyFromMesh(world,cube);
+        onRenderFcts.push(function (delta) {
+            THREEx.Oimo.updateObject3dWithBody(cube, meshBody); // this doesn't work for animated.. no prob!
+            mesh.position.copy(meshBody.getPosition());
+            mesh.quaternion.copy(meshBody.getQuaternion());
+        });
+        /*onRenderFcts.push(function (delta) {
+            cube.position.copy(mesh.position);
+            cube.quaternion.copy(mesh.quaternion);
+            cube.translateY(-2);
+            cube.visible = playerKeys["p"];
+        });*/
+        //mesh.children.push(cube);
+        clients[clientId] = {
             mesh: mesh,
             rotation: {
-              a: 0,
-              b: 0,
-              g: 0,
-              o: 0,
-              enabled: false // this is so we can use the arrow keys before connecting
+                a: 0,
+                b: 0,
+                g: 0,
+                o: 0,
+                enabled: false // this is so we can use the arrow keys before connecting
             }
-          };
-        });
-      }
+        };
+    });
+}
 
-      function removeClient(clientId) {
-        scene.remove(clients[clientId].mesh);
-        delete clients[clientId];
-      }
+function removeClient(clientId) {
+    scene.remove(clients[clientId].mesh);
+    delete clients[clientId];
+}
 
-  </script>
+</script>
 
-  <script type="text/javascript">
+<script type="text/javascript">
     var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
 
     ws.onopen = function () {
-      ws.send(JSON.stringify({clientType: 'renderer'}));
-      webSocketActive = true;
+        ws.send(JSON.stringify({clientType: 'renderer'}));
+        webSocketActive = true;
     };
 
 
     ws.addEventListener("message", function(response) {
-      response = JSON.parse(response.data);
+        response = JSON.parse(response.data);
 
-      switch (response.event) {
-        case 'connected':
-          console.log('connected', response.data.clientId);
-          createClient(response.data.clientId);
-          break;
-        case 'disconnected':
-          console.log('disconnected', response.data.clientId);
-          removeClient(response.data.clientId);
-          break;
-        case 'motion':
-          var val = response.data.value;
-          var clientId = response.data.clientId;
-          clients[clientId].rotation.a = THREE.Math.degToRad( val.a );
-          clients[clientId].rotation.b = THREE.Math.degToRad( val.b );
-          clients[clientId].rotation.g = THREE.Math.degToRad( val.g );
-          clients[clientId].rotation.o = THREE.Math.degToRad( val.o );
-          clients[clientId].rotation.enabled = true;
-          break;
-      }
+        switch (response.event) {
+            case 'connected':
+                console.log('connected', response.data.clientId);
+                createClient(response.data.clientId);
+                break;
+            case 'disconnected':
+                console.log('disconnected', response.data.clientId);
+                removeClient(response.data.clientId);
+                break;
+            case 'motion':
+                var val = response.data.value;
+                var clientId = response.data.clientId;
+                clients[clientId].rotation.a = THREE.Math.degToRad( val.a );
+                clients[clientId].rotation.b = THREE.Math.degToRad( val.b );
+                clients[clientId].rotation.g = THREE.Math.degToRad( val.g );
+                clients[clientId].rotation.o = THREE.Math.degToRad( val.o );
+                clients[clientId].rotation.enabled = true;
+                break;
+        }
     });
 
-  </script>
+</script>
 </body>
 </html>
