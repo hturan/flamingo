@@ -149,6 +149,8 @@
                     cube.rotation.x = -Math.PI / 4;
                     cube.rotation.y = -Math.PI / 4;
                     cube.rotation.z = Math.random() * 2 * Math.PI;
+					var s = 1+Math.random();
+					meshAnim.scale.set( s, s, s );
                     cube.castShadow = true;
                     cube.receiveShadow = true;
                     scenery.push(cube);
@@ -163,7 +165,7 @@
 					bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
 					offset:		 { type: "f", value: 33 },
 					exponent:	 { type: "f", value: 0.6 }
-				}
+				};
 				uniforms.topColor.value.copy( hemiLight.color );
 
 				scene.fog.color.copy( uniforms.bottomColor.value );
@@ -351,10 +353,10 @@
 
                 var cutoffZ = camera.position.z-sceneryDispersion; // furthest distance the scenery gets before respawning
                 scenery.forEach(function(entry) {
-                    entry.position.z -= window.meshAnim.position.z;
+                    entry.position.z -= window.meshAnim.position.z; // move so meshAnim is stationary
                     if (entry.position.z<cutoffZ) {
                         entry.position.z += sceneryDispersion;
-                        entry.position.x = (-0.5 + Math.random())*sceneryDispersion;
+                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
 
                     }});
                 window.meshAnim.position.z = 0;
@@ -437,7 +439,7 @@
        			q1.setFromEuler( euler );                               // orient the device
                 q1.multiply( q0.setFromAxisAngle( zee, - playerRotation.o ) );    // adjust for screen orientation
                 //smooth (slerp) dat quat!
-                window.meshAnim.quaternion.slerp(q1,Math.min(1, delta * 40));
+                window.meshAnim.quaternion.slerp(q1,Math.min(1, delta * 10));
                 // print (rounded) quaternion
                 //console.log(Math.round(window.meshAnim.quaternion.x*10)/10 + ", " + Math.round(window.meshAnim.quaternion.y*10)/10 + ", " + Math.round(window.meshAnim.quaternion.z*10)/10+ ", " + Math.round(window.meshAnim.quaternion.w*10)/10 + "  : " + Math.round(playerRotation.a*10)/10 + ", "+ Math.round(playerRotation.b*10)/10 + ", "+ Math.round(playerRotation.g*10)/10 + ", "+ Math.round(playerRotation.o*10)/10   )
 
