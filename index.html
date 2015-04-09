@@ -76,6 +76,8 @@
       var clock = new THREE.Clock();
       var coolDown = 0;
 
+      var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
+
       init();
       animate();
 
@@ -416,7 +418,6 @@
       webSocketActive = true;
     };
 
-    var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
     ws.addEventListener("message", function(response) {
       response = JSON.parse(response.data);
