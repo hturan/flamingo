@@ -19,7 +19,7 @@
     var ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
 
     var webSocketActive = false;
-    var deviceOrientation = {x: 0, y: 0, z: 0};
+    //var deviceOrientation = {x: 0, y: 0, z: 0};
 
     ws.onopen = function () {
       ws.send(JSON.stringify({client_type: 'controller'}));

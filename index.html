@@ -440,7 +440,7 @@
 			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
 
                 // print (rounded) quaternion
-                console.log(Math.round(window.meshAnim.quaternion.x*10)/10 + ", " + Math.round(window.meshAnim.quaternion.y*10)/10 + ", " + Math.round(window.meshAnim.quaternion.z*10)/10+ ", " + Math.round(window.meshAnim.quaternion.w*10)/10 + "  : " + Math.round(playerRotation.a*10)/10 + ", "+ Math.round(playerRotation.b*10)/10 + ", "+ Math.round(playerRotation.g*10)/10 + ", "+ Math.round(playerRotation.o*10)/10   )
+                //console.log(Math.round(window.meshAnim.quaternion.x*10)/10 + ", " + Math.round(window.meshAnim.quaternion.y*10)/10 + ", " + Math.round(window.meshAnim.quaternion.z*10)/10+ ", " + Math.round(window.meshAnim.quaternion.w*10)/10 + "  : " + Math.round(playerRotation.a*10)/10 + ", "+ Math.round(playerRotation.b*10)/10 + ", "+ Math.round(playerRotation.g*10)/10 + ", "+ Math.round(playerRotation.o*10)/10   )
 
 				//bullet
 				coolDown += delta ;
@@ -508,6 +508,8 @@
                     playerRotation.b = rotation.b;
                     playerRotation.g = rotation.g;
                     playerRotation.o = rotation.o;
+                    console.log(Math.round(playerRotation.a*100)/100 + ", "+ Math.round(playerRotation.b*100)/100 + ", "+ Math.round(playerRotation.g*100)/100 + ", "+ Math.round(playerRotation.o*100)/100   );
+                    console.log(response.data);
 /*
 					playerRotation.x = -THREE.Math.degToRad(rotation.x);
 					playerRotation.y = THREE.Math.degToRad(rotation.y);
