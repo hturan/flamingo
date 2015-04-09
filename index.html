@@ -329,13 +329,13 @@
             //smooth (slerp) dat quat!
             client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
           }
-          client.mesh.translateZ(0.5);
+          client.mesh.translateZ(3);
         }
 
         // Render bullets
         for (var i = 0; i < bullets.length; i += 1) {
           var bullet = bullets[i];
-          bullet.translateZ(5);
+          bullet.translateZ(7);
         }
 
         //bullet
