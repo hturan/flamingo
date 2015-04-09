@@ -504,12 +504,11 @@
 					break;
 				case 'motion':
 					var rotation = response.data.value;
-                    playerRotation.a = rotation.a;
-                    playerRotation.b = rotation.b;
-                    playerRotation.g = rotation.g;
-                    playerRotation.o = rotation.o;
+                    playerRotation.a = THREE.Math.degToRad( rotation.a );
+                    playerRotation.b = THREE.Math.degToRad( rotation.b );
+                    playerRotation.g = THREE.Math.degToRad( rotation.g );
+                    playerRotation.o = THREE.Math.degToRad( rotation.o );
                     console.log(Math.round(playerRotation.a*100)/100 + ", "+ Math.round(playerRotation.b*100)/100 + ", "+ Math.round(playerRotation.g*100)/100 + ", "+ Math.round(playerRotation.o*100)/100   );
-                    console.log(response.data);
 /*
 					playerRotation.x = -THREE.Math.degToRad(rotation.x);
 					playerRotation.y = THREE.Math.degToRad(rotation.y);

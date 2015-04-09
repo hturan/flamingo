@@ -54,10 +54,10 @@
     setInterval(function () {
       if (webSocketActive) {
         var data = {};
-   		data.a  = scope.deviceOrientation.alpha ? THREE.Math.degToRad( scope.deviceOrientation.alpha ) : 0; // Z
-		data.b   = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta  ) : 0; // X'
-		data.g  = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma ) : 0; // Y''
-		data.o = scope.screenOrientation       ? THREE.Math.degToRad( scope.screenOrientation       ) : 0; // O
+   		data.a  = scope.deviceOrientation.alpha  ? scope.deviceOrientation.alpha : 0; // Z
+		data.b   = scope.deviceOrientation.beta  ? scope.deviceOrientation.beta  : 0; // X'
+		data.g  = scope.deviceOrientation.gamma  ? scope.deviceOrientation.gamma : 0; // Y''
+		data.o = scope.screenOrientation         ? scope.screenOrientation       : 0; // O
 
         ws.send(JSON.stringify(data));
       }
