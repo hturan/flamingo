@@ -76,6 +76,8 @@
       var clock = new THREE.Clock();
       var coolDown = 0;
 
+      var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
+
       init();
       animate();
 
@@ -266,9 +268,25 @@
 
         render();
         
-        document.getElementById('fps').innerText = fps.getFPS();
+        //document.getElementById('fps').innerText = window.fps.getFPS();
       }
-      
+
+      window.fps = {
+          startTime : 0,
+          frameNumber : 0,
+          getFPS : function(){
+            this.frameNumber++;
+            var d = new Date().getTime(),
+              currentTime = ( d - this.startTime ) / 1000,
+              result = Math.floor( ( this.frameNumber / currentTime ) );
+
+            if( currentTime > 1 ){
+              this.startTime = new Date().getTime();
+              this.frameNumber = 0;
+            }
+            return result;
+          }
+        };
       function render() {
         var delta = clock.getDelta();
 
@@ -311,13 +329,13 @@
             //smooth (slerp) dat quat!
             client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
           }
-          client.mesh.translateZ(0.5);
+          client.mesh.translateZ(3);
         }
 
         // Render bullets
         for (var i = 0; i < bullets.length; i += 1) {
           var bullet = bullets[i];
-          bullet.translateZ(5);
+          bullet.translateZ(7);
         }
 
         //bullet
@@ -406,6 +424,7 @@
         scene.remove(clients[clientId].mesh);
         delete clients[clientId];
       }
+
   </script>
 
   <script type="text/javascript">
@@ -416,7 +435,6 @@
       webSocketActive = true;
     };
 
-    var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
     ws.addEventListener("message", function(response) {
       response = JSON.parse(response.data);
@@ -442,22 +460,6 @@
       }
     });
 
-    var fps = {
-      startTime : 0,
-      frameNumber : 0,
-      getFPS : function(){
-        this.frameNumber++;
-        var d = new Date().getTime(),
-          currentTime = ( d - this.startTime ) / 1000,
-          result = Math.floor( ( this.frameNumber / currentTime ) );
-
-        if( currentTime > 1 ){
-          this.startTime = new Date().getTime();
-          this.frameNumber = 0;
-        }
-        return result;
-      } 
-    };
   </script>
 </body>
 </html>
