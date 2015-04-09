@@ -433,7 +433,7 @@
            		var q0 = new THREE.Quaternion();
         		//var q1 = new THREE.Quaternion( 0, 0, 0, -1 ); // - PI/2 around the x-axis
 
-			    euler.set( playerRotation.b, playerRotation.a,  playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
+			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
        			window.meshAnim.quaternion.setFromEuler( euler );                               // orient the device
                 //window.meshAnim.quaternion.multiply( q1 );                                      // camera looks out the back of the device, not the top
                 window.meshAnim.quaternion.multiply( q0.setFromAxisAngle( zee, - playerRotation.o ) );    // adjust for screen orientation
