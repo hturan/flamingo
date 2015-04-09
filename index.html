@@ -364,56 +364,7 @@
                     }
                 });
                 window.meshAnim.position.z = 0;
-				// player velocity (now using clock delta)
-
-				//set from server
-				//window.meshAnim.position.x += playerPosition.x * 1000 * delta;
-				//window.meshAnim.position.y += playerPosition.y * 1000 * delta;
-
-				//window.meshAnim.rotation.x = playerRotation.x * 1000 * delta;
-				//window.meshAnim.rotation.y = playerRotation.y * 1000 * delta;
-
-				// keyboard velocities (old method)
-				//window.meshAnim.position.x += (playerKeys["r"] - playerKeys["l"]) * 100 * delta;
-   				//window.meshAnim.position.y += (playerKeys["d"]-playerKeys["u"] ) * 100 * delta;
-                // now trying to use quarternions
-                var sqrt = Math.sqrt(0.5);
-
-                //direction = new THREE.Quaternion().set(x,y,z,w);
-                var ql = new THREE.Quaternion().set(sqrt,0,0,sqrt);
-                var qr = new THREE.Quaternion().set(-sqrt,0,0,sqrt);
-                var qu = new THREE.Quaternion().set(0,sqrt,0,sqrt);
-                //var qu = new THREE.Quaternion().set(0,sqrt/4,sqrt/4,sqrt);
-                var qd = new THREE.Quaternion().set(0,-sqrt,0,sqrt);
-                //var qd = new THREE.Quaternion().set(0,sqrt/4,-sqrt/4,sqrt);
-                var newq = new THREE.Quaternion().set(0,0,0,1); // the target direction
-                //if (!(playerKeys["u"] && playerKeys["d"])) {
-                    if (playerKeys["u"]) {
-                        newq.multiply(qu);
-                    }
-                    if (playerKeys["d"]) {
-                        newq.multiply(qd);
-                    }
-                //}
-                //if (!(playerKeys["l"] && playerKeys["r"])) {
-
-                    if (playerKeys["r"]) {
-                        newq.multiply(qr);
-                    }
-                    if (playerKeys["l"]) {
-                        newq.multiply(ql);
-                    }
-                //}
-				//window.meshAnim.rotation.y = (window.meshAnim.rotation.y + (playerKeys["r"] - playerKeys["l"]) * 5 * delta) * 0.99;
-				//window.meshAnim.rotation.x = (window.meshAnim.rotation.x + (playerKeys["d"]-playerKeys["u"] ) * 7 * delta) * 0.99;
-				// interpolate to the new target angle
-                //window.meshAnim.quaternion.slerp(newq,delta) ;
-                // aaaaaaaaand that didn't work so let's brute force it to see what's going on
-                var lr = Math.pow(Math.abs(playerKeys["r"] - playerKeys["l"])/(Math.abs(playerKeys["r"] - playerKeys["l"])+Math.abs(playerKeys["d"] - playerKeys["u"])+1),0.5)*Math.sign(playerKeys["r"] - playerKeys["l"]);
-                var ud = Math.pow(Math.abs(playerKeys["d"] - playerKeys["u"])/(Math.abs(playerKeys["r"] - playerKeys["l"])+Math.abs(playerKeys["d"] - playerKeys["u"])+1),0.5)*Math.sign(playerKeys["d"] - playerKeys["u"]);
-
-                // new method... still doesn't work with multiple keys held down
-                //window.meshAnim.quaternion.set(-ud,lr,0,1-Math.abs(ud)-Math.abs(lr));
+				
 
                 // third quaternion method! D:
                 var q=new THREE.Quaternion;
@@ -432,18 +383,19 @@
 
 
                 // do client shit after so it works?
+                if (playerRotation.enabled) {
+                    var euler = new THREE.Euler();
+                    var zee = new THREE.Vector3(0, 0, 1);
 
-                var euler = new THREE.Euler();
-           		var zee = new THREE.Vector3( 0, 0, 1 );
+                    var q0 = new THREE.Quaternion();
+                    var q1 = new THREE.Quaternion(0, 0, 0, 1); // - PI/2 around the x-axis
 
-           		var q0 = new THREE.Quaternion();
-        		var q1 = new THREE.Quaternion( 0, 0, 0, 1 ); // - PI/2 around the x-axis
-
-			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
-       			q1.setFromEuler( euler );                               // orient the device
-                q1.multiply( q0.setFromAxisAngle( zee, - playerRotation.o ) );    // adjust for screen orientation
-                //smooth (slerp) dat quat!
-                window.meshAnim.quaternion.slerp(q1,Math.min(1, delta * 10));
+                    euler.set(playerRotation.b, playerRotation.a, -playerRotation.g, 'YXZ');                       // 'ZXY' for the device, but 'YXZ' for us
+                    q1.setFromEuler(euler);                               // orient the device
+                    q1.multiply(q0.setFromAxisAngle(zee, -playerRotation.o));    // adjust for screen orientation
+                    //smooth (slerp) dat quat!
+                    window.meshAnim.quaternion.slerp(q1, Math.min(1, delta * 10));
+                }
                 // print (rounded) quaternion
                 //console.log(Math.round(window.meshAnim.quaternion.x*10)/10 + ", " + Math.round(window.meshAnim.quaternion.y*10)/10 + ", " + Math.round(window.meshAnim.quaternion.z*10)/10+ ", " + Math.round(window.meshAnim.quaternion.w*10)/10 + "  : " + Math.round(playerRotation.a*10)/10 + ", "+ Math.round(playerRotation.b*10)/10 + ", "+ Math.round(playerRotation.g*10)/10 + ", "+ Math.round(playerRotation.o*10)/10   )
 
@@ -492,7 +444,7 @@
     };
 
 		var playerPosition = {x:0, y:0, z:0};
-		var playerRotation = {a:0, b:0, g:0, o:0};
+		var playerRotation = {a:0, b:0, g:0, o:0,enabled:false};
 		var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
 		ws.addEventListener("message", function(response) {
@@ -513,6 +465,7 @@
                     playerRotation.b = THREE.Math.degToRad( rotation.b );
                     playerRotation.g = THREE.Math.degToRad( rotation.g );
                     playerRotation.o = THREE.Math.degToRad( rotation.o );
+                    playerRotation.enabled = true;
                     console.log(Math.round(playerRotation.a*100)/100 + ", "+ Math.round(playerRotation.b*100)/100 + ", "+ Math.round(playerRotation.g*100)/100 + ", "+ Math.round(playerRotation.o*100)/100   );
 /*
 					playerRotation.x = -THREE.Math.degToRad(rotation.x);
