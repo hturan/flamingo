@@ -428,16 +428,15 @@
                 // do client shit after so it works?
 
                 var euler = new THREE.Euler();
-           		var zee = new THREE.Vector3( 0, 0, 1 );
+           		var zee = new THREE.Vector3( 0, 0, -1 );
 
            		var q0 = new THREE.Quaternion();
-        		var q1 = new THREE.Quaternion( 0, 0, 0, -1 ); // - PI/2 around the x-axis
+        		//var q1 = new THREE.Quaternion( 0, 0, 0, -1 ); // - PI/2 around the x-axis
 
-			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
+			    euler.set( playerRotation.b, playerRotation.a,  playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
        			window.meshAnim.quaternion.setFromEuler( euler );                               // orient the device
                 window.meshAnim.quaternion.multiply( q1 );                                      // camera looks out the back of the device, not the top
                 window.meshAnim.quaternion.multiply( q0.setFromAxisAngle( zee, - playerRotation.o ) );    // adjust for screen orientation
-			    euler.set( playerRotation.b, playerRotation.a, - playerRotation.g, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
 
                 // print (rounded) quaternion
                 //console.log(Math.round(window.meshAnim.quaternion.x*10)/10 + ", " + Math.round(window.meshAnim.quaternion.y*10)/10 + ", " + Math.round(window.meshAnim.quaternion.z*10)/10+ ", " + Math.round(window.meshAnim.quaternion.w*10)/10 + "  : " + Math.round(playerRotation.a*10)/10 + ", "+ Math.round(playerRotation.b*10)/10 + ", "+ Math.round(playerRotation.g*10)/10 + ", "+ Math.round(playerRotation.o*10)/10   )
