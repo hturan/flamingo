@@ -3,7 +3,7 @@
 <head>
   <title>flamingo</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
+  <script src="js/three.js"></script>
 
   <style type="text/css">
     html, body {
@@ -68,7 +68,11 @@
 
       var bullets = [];
       var clients = {};
-
+      
+      var scenery = [];
+      var sceneryDispersion = 2000; // how much the cubes should be scattered about
+      var numSceneryObjects = 40;
+      
       var clock = new THREE.Clock();
       var coolDown = 0;
 
@@ -114,6 +118,7 @@
         dirLight.shadowDarkness = 0.3;
         // dirLight.shadowCameraVisible = true;
 
+
         scene.add(dirLight);
 
 
@@ -131,7 +136,28 @@
 
         ground.receiveShadow = true;
 
+        // CUBES
 
+        var geometry = new THREE.BoxGeometry( 6, 6, 6 );
+        var material = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+
+        for (var i=0;i<numSceneryObjects;i++) {
+            var cube = new THREE.Mesh(geometry, material);
+            cube.position.y = -33 + Math.random();
+
+            cube.position.x = (-0.5 + Math.random())*sceneryDispersion;
+            cube.position.z = camera.position.z-Math.random()*sceneryDispersion; // spawn the cubes only in front of the camera
+            cube.rotation.x = -Math.PI / 4;
+            cube.rotation.y = -Math.PI / 4;
+            cube.rotation.z = Math.random() * 2 * Math.PI;
+            var s = 1+Math.random();
+            cube.scale.set( s, s, s );
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            scenery.push(cube);
+            scene.add(cube);
+        }
+          
         // Sky
         var vertexShader = document.getElementById( 'vertexShader' ).textContent;
         var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
@@ -140,7 +166,7 @@
           bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
           offset:    { type: "f", value: 33 },
           exponent:  { type: "f", value: 0.6 }
-        }
+        };
         uniforms.topColor.value.copy( hemiLight.color );
 
         scene.fog.color.copy( uniforms.bottomColor.value );
@@ -246,16 +272,45 @@
       function render() {
         var delta = clock.getDelta();
 
+// can delete?
+//                // move scenery and respawn if too far away
+//                var cutoffZ = camera.position.z-sceneryDispersion; // furthest distance the scenery gets before respawning
+//                scenery.forEach(function(entry) {
+//                    entry.position.z -= window.meshAnim.position.z; // move so meshAnim is stationary
+//                    if (entry.position.z<cutoffZ) {
+//                        entry.position.z += sceneryDispersion;
+//                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
+//                    }
+//                    if (entry.position.z>camera.position.z) {
+//                        entry.position.z -= sceneryDispersion;
+//                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
+//                    }
+//                });
+//                window.meshAnim.position.z = 0;
+
+
         // Render clients
         for (var clientId in clients) {
           var client = clients[clientId];
 
           client.mesh.updateAnimation(1000 * delta);
 
-          client.mesh.rotation.x = client.rotation.x;
-          client.mesh.rotation.y = client.rotation.y;
-          client.mesh.rotation.z = client.rotation.z;
+          //client.mesh.rotation.x = client.rotation.x;
+          //client.mesh.rotation.y = client.rotation.y;
+          //client.mesh.rotation.z = client.rotation.z;
+          if (client.rotation.enabled) {
+            var euler = new THREE.Euler();
+            var zee = new THREE.Vector3(0, 0, 1);
 
+            var q0 = new THREE.Quaternion();
+            var q1 = new THREE.Quaternion(0, 0, 0, 1); // - PI/2 around the x-axis
+
+            euler.set(client.rotation.b, client.rotation.a, -client.rotation.g, 'YXZ');                       // 'ZXY' for the device, but 'YXZ' for us
+            q1.setFromEuler(euler);                               // orient the device
+            q1.multiply(q0.setFromAxisAngle(zee, -client.rotation.o));    // adjust for screen orientation
+            //smooth (slerp) dat quat!
+            client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
+          }
           client.mesh.translateZ(0.5);
         }
 
@@ -337,9 +392,11 @@
           clients[clientId] = {
             mesh: mesh,
             rotation: {
-              x: 0,
-              y: 0,
-              z: 0
+              a: 0,
+              b: 0,
+              g: 0,
+              o: 0,
+              enabled: false // this is so we can use the arrow keys before connecting
             }
           };
         });
@@ -362,7 +419,7 @@
     var playerKeys = {"u":0,"d":0,"l":0,"r":0,"s":0};
 
     ws.addEventListener("message", function(response) {
-      var response = JSON.parse(response.data);
+      response = JSON.parse(response.data);
 
       switch (response.event) {
         case 'connected':
@@ -374,13 +431,13 @@
           removeClient(response.data.clientId);
           break;
         case 'motion':
-          var rotation = response.data.value;
+          var val = response.data.value;
           var clientId = response.data.clientId;
-
-          clients[clientId].rotation.x = -THREE.Math.degToRad(rotation.x);
-          clients[clientId].rotation.y = THREE.Math.degToRad(rotation.y);
-          clients[clientId].rotation.z = -THREE.Math.degToRad(rotation.z);
-
+          clients[clientId].rotation.a = THREE.Math.degToRad( val.a );
+          clients[clientId].rotation.b = THREE.Math.degToRad( val.b );
+          clients[clientId].rotation.g = THREE.Math.degToRad( val.g );
+          clients[clientId].rotation.o = THREE.Math.degToRad( val.o );
+          clients[clientId].rotation.enabled = true;
           break;
       }
     });

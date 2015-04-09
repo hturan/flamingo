@@ -1,10 +1,10 @@
-var WebSocketServer = require("ws").Server
-var http = require("http")
-var finalhandler = require("finalhandler")
-var serveStatic = require("serve-static")
+var WebSocketServer = require("ws").Server;
+var http = require("http");
+var finalhandler = require("finalhandler");
+var serveStatic = require("serve-static");
 var uuid = require("node-uuid");
 
-var port = process.env.PORT || 5000
+var port = process.env.PORT || 5000;
 
 var serve = serveStatic('./', {'index': ['index.html']})
  
@@ -12,7 +12,7 @@ var serve = serveStatic('./', {'index': ['index.html']})
 var server = http.createServer(function(req, res){
   var done = finalhandler(req, res)
   serve(req, res, done)
-})
+});
  
 // Listen 
 server.listen(port);
@@ -48,53 +48,6 @@ wss.on('connection', function(ws) {
     }
   });
 });
-
-// var dualShock = require('dualshock-controller');
-
-// var controller = dualShock({
-//   config : "dualShock3",
-//   accelerometerSmoothing : true,
-//   analogStickSmoothing : true
-// });
-
-// controller.connect();
-
-// // Joysticks
-// // =========
-// controller.on('left:move', function(data) {
-//   // if ((position.x > 130 || position.x < 120) || (position.y > 130 || position.y < 120)) {
-//     sendMessage('left.move', data);
-//   // };
-// });
-
-// // Motion
-// // ======
-// // roll
-// controller.on('rightLeft:motion', function(data) {
-//   // console.log('rightLeft', data);
-//   sendMessage('rightLeft.motion', data);
-// });
-
-// controller.on('upDown:motion', function(data) {
-//   // console.log('upDown', data);
-//   sendMessage('upDown.motion', data);
-// });
-
-// // pitch
-// controller.on('forwardBackward:motion', function(data) {
-//   // console.log('forwardBackward', data);
-//   // sendMessage('forwardBackward.motion', data);
-// });
-
-// // Buttons
-// // =======
-// controller.on('x:press', function() {
-//   sendMessage('x.press');
-// });
-
-// controller.on('x:release', function() {
-//   sendMessage('x.release');
-// });
 
 function sendMessage (event, data) {
   var response = {
