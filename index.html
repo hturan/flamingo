@@ -370,18 +370,26 @@ function render() {
             //smooth (slerp) dat quat!
             client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
         } else {
-            var q=new THREE.Quaternion;
-            // X - left and right rotation, first check if the keys are being pressed but not both at once:
-            if (!(playerKeys["l"] && playerKeys["r"]) && (playerKeys["l"] || playerKeys["r"])) {
-                q.setFromAxisAngle(new THREE.Vector3(0, 1, 0),
-                                (playerKeys["l"] - playerKeys["r"]) * delta*3);
-                client.mesh.quaternion.multiply(q);
+            if (client.meshBody) {
+                client.meshBody.body.angularVelocity.y =(playerKeys["l"] - playerKeys["r"]) * delta*1000;
+                client.meshBody.body.angularVelocity.x =(playerKeys["u"] - playerKeys["d"]) * delta * 1000;
+                //client.meshBody.body.linearVelocity.x += 0.1;
+                //client.meshBody.body.applyImpulse(new OIMO.Vec3(0,0,0),new OIMO.Vec3(-1*delta*0.01,0,0));
             }
-            // Y - up and down rotation, first check if the keys are being pressed but not both at once:
-            if (!(playerKeys["u"] && playerKeys["d"]) && (playerKeys["u"] || playerKeys["d"])) {
-                q.setFromAxisAngle(new THREE.Vector3(1, 0, 0),
-                                (playerKeys["u"] - playerKeys["d"]) * delta*3);
-                client.mesh.quaternion.multiply(q);
+            else {
+                var q=new THREE.Quaternion;
+                // X - left and right rotation, first check if the keys are being pressed but not both at once:
+                if (!(playerKeys["l"] && playerKeys["r"]) && (playerKeys["l"] || playerKeys["r"])) {
+                    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0),
+                                    (playerKeys["l"] - playerKeys["r"]) * delta*3);
+                    client.mesh.quaternion.multiply(q);
+                }
+                // Y - up and down rotation, first check if the keys are being pressed but not both at once:
+                if (!(playerKeys["u"] && playerKeys["d"]) && (playerKeys["u"] || playerKeys["d"])) {
+                    q.setFromAxisAngle(new THREE.Vector3(1, 0, 0),
+                                    (playerKeys["u"] - playerKeys["d"]) * delta*3);
+                    client.mesh.quaternion.multiply(q);
+                }
             }
         }
         client.mesh.translateZ(0);
@@ -486,6 +494,7 @@ function createClient(clientId) {
 
         scene.add(cube);
         var meshBody = THREEx.Oimo.createBodyFromMesh(world,cube);
+        console.log(meshBody);
         onRenderFcts.push(function (delta) {
             THREEx.Oimo.updateObject3dWithBody(cube, meshBody); // this doesn't work for animated.. no prob!
             mesh.position.copy(meshBody.getPosition());
@@ -500,6 +509,7 @@ function createClient(clientId) {
         //mesh.children.push(cube);
         clients[clientId] = {
             mesh: mesh,
+            meshBody: meshBody,
             rotation: {
                 a: 0,
                 b: 0,
