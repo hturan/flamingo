@@ -357,6 +357,12 @@ function render() {
         //client.mesh.rotation.x = client.rotation.x;
         //client.mesh.rotation.y = client.rotation.y;
         //client.mesh.rotation.z = client.rotation.z;
+        if (client.meshBody) {
+            client.meshBody.body.angularVelocity.y =(playerKeys["l"] - playerKeys["r"]) * delta*1000;
+            client.meshBody.body.angularVelocity.x =(playerKeys["u"] - playerKeys["d"]) * delta * 1000;
+            //client.meshBody.body.linearVelocity.x += 0.1;
+            //client.meshBody.body.applyImpulse(new OIMO.Vec3(0,0,0),new OIMO.Vec3(-1*delta*0.01,0,0));
+        }
         if (client.rotation.enabled) {
             var euler = new THREE.Euler();
             var zee = new THREE.Vector3(0, 0, 1);
@@ -370,13 +376,8 @@ function render() {
             //smooth (slerp) dat quat!
             client.mesh.quaternion.slerp(q1, Math.min(1, delta * 10));
         } else {
-            if (client.meshBody) {
-                client.meshBody.body.angularVelocity.y =(playerKeys["l"] - playerKeys["r"]) * delta*1000;
-                client.meshBody.body.angularVelocity.x =(playerKeys["u"] - playerKeys["d"]) * delta * 1000;
-                //client.meshBody.body.linearVelocity.x += 0.1;
-                //client.meshBody.body.applyImpulse(new OIMO.Vec3(0,0,0),new OIMO.Vec3(-1*delta*0.01,0,0));
-            }
-            else {
+
+             {
                 var q=new THREE.Quaternion;
                 // X - left and right rotation, first check if the keys are being pressed but not both at once:
                 if (!(playerKeys["l"] && playerKeys["r"]) && (playerKeys["l"] || playerKeys["r"])) {
