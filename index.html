@@ -72,6 +72,10 @@
 </script>
 <script>
 // OIMO SHIZZLE GOES UP HERE
+var bodys = [];
+var joints = [];
+
+var types = [], sizes = [];
 // create oimo world contains all rigidBodys and joint.
 var world	= new OIMO.World(1/360, 2, 8);
 var onRenderFcts= []; // contains all the functions to update mesh-physics relationships
@@ -196,7 +200,16 @@ function init() {
             });
 	    })();
     }
-          
+    // more cubessss
+    createCube({x:100,y:5,z:10},{x:0,y:0,z:10},{});
+    createCube({x:100,y:5,z:10},{x:0,y:0,z:-10},{});
+    createCube({x:20,y:20,z:20},{x:-40,y:-20,z:0},{});
+    createCube({x:20,y:25,z:20},{x: 40,y:-20,z:0},{});
+    createCube({x:10,y:10,z:10},{x: 40,y:0,z:100},{});
+    createCube({x:10,y:10,z:10},{x: 40,y:10,z:100},{});
+    createCube({x:10,y:10,z:10},{x: 40,y:20,z:100},{});
+    createCube({x:10,y:10,z:10},{x: 40,y:30,z:100},{});
+    createCube({x:10,y:10,z:10},{x: 40,y:40,z:100},{});
     // Sky
     var vertexShader = document.getElementById( 'vertexShader' ).textContent;
     var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
@@ -328,25 +341,28 @@ window.fps = {
         return result;
     }
 };
+function createCube(size,pos) {
+    //var cube = new OIMO.Body({type:"box", size:[size.x,size.y,size.z], pos:[10,7,12], rot:[0,0,0], move:true, world:world, name:'head' });
+    var cubegeometry = new THREE.BoxGeometry( size.x,size.y,size.z);
+    var cubematerial = new THREE.MeshPhongMaterial( { color: 0xddaabb, specular:  0x050505, shininess: 20, vertexColors: 0xddaabb, shading: THREE.FlatShading } );
+
+    var cube = new THREE.Mesh( cubegeometry, cubematerial );
+
+    cube.position.copy(pos);
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+    //cube.quaternion.copy(headBody.getQuaternion());
+    scene.add(cube);
+    var cubeBody = THREEx.Oimo.createBodyFromMesh(world,cube);
+    cube.body = cubeBody; // this is for our own reference
+
+    onRenderFcts.push(function (delta) {
+        THREEx.Oimo.updateObject3dWithBody(cube, cubeBody); // this doesn't work for animated.. no prob!
+    });
+    return cube;
+}
 function render() {
     var delta = clock.getDelta();
-
-// can delete?
-//                // move scenery and respawn if too far away
-//                var cutoffZ = camera.position.z-sceneryDispersion; // furthest distance the scenery gets before respawning
-//                scenery.forEach(function(entry) {
-//                    entry.position.z -= window.meshAnim.position.z; // move so meshAnim is stationary
-//                    if (entry.position.z<cutoffZ) {
-//                        entry.position.z += sceneryDispersion;
-//                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
-//                    }
-//                    if (entry.position.z>camera.position.z) {
-//                        entry.position.z -= sceneryDispersion;
-//                        entry.position.x = camera.position.x+(-0.5 + Math.random())*sceneryDispersion;
-//                    }
-//                });
-//                window.meshAnim.position.z = 0;
-
 
     // Render clients
     for (var clientId in clients) {
@@ -354,13 +370,11 @@ function render() {
 
         client.mesh.updateAnimation(1000 * delta);
 
-        //client.mesh.rotation.x = client.rotation.x;
-        //client.mesh.rotation.y = client.rotation.y;
-        //client.mesh.rotation.z = client.rotation.z;
         if (client.meshBody) {
-            client.meshBody.body.angularVelocity.y =(playerKeys["l"] - playerKeys["r"]) * delta*1000;
+            client.meshBody.body.angularVelocity.y =(playerKeys["l"] - playerKeys["r"]) * delta * 1000;
             client.meshBody.body.angularVelocity.x =(playerKeys["u"] - playerKeys["d"]) * delta * 1000;
-            //client.meshBody.body.linearVelocity.x += 0.1;
+            client.meshBody.body.sleeping = false;
+            //client.meshBody.body.linearVelocity.x += 0.01;
             //client.meshBody.body.applyImpulse(new OIMO.Vec3(0,0,0),new OIMO.Vec3(-1*delta*0.01,0,0));
         }
         if (client.rotation.enabled) {
@@ -496,10 +510,25 @@ function createClient(clientId) {
         scene.add(cube);
         var meshBody = THREEx.Oimo.createBodyFromMesh(world,cube);
         console.log(meshBody);
+//        var headBody = new OIMO.Body({type:"box", size:[200,9,17], pos:[10,7,12], rot:[0,0,0], move:true, world:world, name:'head' });
+//        cubegeometry = new THREE.BoxGeometry( 200,9,17);
+//        var headCube = new THREE.Mesh( cubegeometry, cubematerial );
+//
+//        headCube.position.copy(headBody.getPosition());
+//        headCube.castShadow = true;
+//        headCube.receiveShadow = true;
+//        headCube.quaternion.copy(headBody.getQuaternion());
+//        scene.add(headCube);
+//        console.log(headBody);
+        //OIMO.addRigidBody({ type:"ground", size:[2540,300,1270], pos:[0,-150,0] })
         onRenderFcts.push(function (delta) {
             THREEx.Oimo.updateObject3dWithBody(cube, meshBody); // this doesn't work for animated.. no prob!
+//            THREEx.Oimo.updateObject3dWithBody(headCube, headBody); // this doesn't work for animated.. no prob!
+
             mesh.position.copy(meshBody.getPosition());
             mesh.quaternion.copy(meshBody.getQuaternion());
+            //headCube.position.copy(headBody.getPosition());
+            //headCube.quaternion.copy(headBody.getQuaternion());
         });
         /*onRenderFcts.push(function (delta) {
             cube.position.copy(mesh.position);
